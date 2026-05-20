@@ -118,12 +118,29 @@ export default function Home() {
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="text-center mb-8"
+        className="relative max-w-5xl mx-auto mb-8 flex items-center justify-center"
       >
-        <h1 className="text-2xl font-bold tracking-tight text-white">
-          <span className="text-slate-400">(HD)</span> Hell <span className="text-violet-400">Daily</span>
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">กรอก แล้ว copy เลย</p>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            <span className="text-slate-400">(HD)</span> Hell <span className="text-violet-400">Daily</span>
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">กรอก แล้ว copy เลย</p>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={async () => {
+            await fetch("/api/auth/logout", { method: "POST" });
+            router.push("/login");
+          }}
+          className="absolute right-0 flex items-center gap-2 px-3 py-1.5 rounded-lg
+                     text-xs text-slate-500 border border-white/8 bg-white/[0.03]
+                     hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/5
+                     transition-all duration-200"
+        >
+          <LogOut size={13} />
+          ออกจากระบบ
+        </motion.button>
       </motion.div>
 
       {/* DB warning */}
@@ -186,17 +203,6 @@ export default function Home() {
                       className="text-slate-500 hover:text-slate-300 transition-colors"
                     >
                       <Settings size={14} />
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={async () => {
-                        await fetch("/api/auth/logout", { method: "POST" });
-                        router.push("/login");
-                      }}
-                      className="text-slate-500 hover:text-red-400 transition-colors"
-                    >
-                      <LogOut size={14} />
                     </motion.button>
                   </div>
                 </div>
