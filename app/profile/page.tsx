@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Camera, Save } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Camera, Save, KeyRound, ChevronDown } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -14,6 +14,14 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [isFirst, setIsFirst] = useState(false);
+
+  const [showPwForm, setShowPwForm] = useState(false);
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwError, setPwError] = useState("");
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwSaving, setPwSaving] = useState(false);
 
   useEffect(() => {
     fetch("/api/profile").then((r) => r.json()).then((u) => {
@@ -68,6 +76,28 @@ export default function ProfilePage() {
       setError(d.error);
       setSaving(false);
     }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError("");
+    if (newPw !== confirmPw) { setPwError("รหัสผ่านใหม่ไม่ตรงกัน"); return; }
+    if (newPw.length < 6) { setPwError("รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร"); return; }
+    setPwSaving(true);
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
+    });
+    if (res.ok) {
+      setPwSuccess(true);
+      setCurrentPw(""); setNewPw(""); setConfirmPw("");
+      setTimeout(() => { setPwSuccess(false); setShowPwForm(false); }, 2000);
+    } else {
+      const d = await res.json();
+      setPwError(d.error);
+    }
+    setPwSaving(false);
   };
 
   const inputClass =
@@ -153,6 +183,81 @@ export default function ProfilePage() {
             </button>
           )}
         </div>
+
+        {/* Change password section */}
+        {!isFirst && (
+          <div className="mt-3 rounded-2xl bg-white/[0.04] border border-white/10 overflow-hidden">
+            <button
+              onClick={() => { setShowPwForm((v) => !v); setPwError(""); setPwSuccess(false); }}
+              className="w-full flex items-center justify-between px-5 py-4 text-sm text-slate-400
+                         hover:text-slate-200 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <KeyRound size={14} className="text-slate-500" />
+                เปลี่ยนรหัสผ่าน
+              </span>
+              <motion.div animate={{ rotate: showPwForm ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                <ChevronDown size={14} className="text-slate-600" />
+              </motion.div>
+            </button>
+
+            <AnimatePresence>
+              {showPwForm && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <form onSubmit={handleChangePassword} className="px-5 pb-5 space-y-3 border-t border-white/8 pt-4">
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1.5">รหัสผ่านปัจจุบัน</label>
+                      <input
+                        type="password" value={currentPw}
+                        onChange={(e) => setCurrentPw(e.target.value)}
+                        placeholder="••••••••" className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1.5">รหัสผ่านใหม่</label>
+                      <input
+                        type="password" value={newPw}
+                        onChange={(e) => setNewPw(e.target.value)}
+                        placeholder="อย่างน้อย 6 ตัวอักษร" className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1.5">ยืนยันรหัสผ่านใหม่</label>
+                      <input
+                        type="password" value={confirmPw}
+                        onChange={(e) => setConfirmPw(e.target.value)}
+                        placeholder="••••••••" className={inputClass}
+                      />
+                    </div>
+                    {pwError && <p className="text-xs text-red-400">{pwError}</p>}
+                    {pwSuccess && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                        className="text-xs text-emerald-400"
+                      >
+                        เปลี่ยนรหัสผ่านสำเร็จ ✓
+                      </motion.p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={pwSaving || !currentPw || !newPw || !confirmPw}
+                      className="w-full py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300
+                                 text-sm font-semibold hover:bg-white/8 transition-colors disabled:opacity-40"
+                    >
+                      {pwSaving ? "กำลังบันทึก..." : "ยืนยันเปลี่ยนรหัสผ่าน"}
+                    </button>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </motion.div>
     </main>
   );
