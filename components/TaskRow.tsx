@@ -13,10 +13,10 @@ interface Props {
   mentionUsers: MentionUser[];
 }
 
-function parseJira(value: string, prefixes: string[]): { prefix: string; num: string } {
+function parseJira(value: string): { prefix: string; num: string } {
   const clean = value.toUpperCase().startsWith("JIRA-") ? value.slice(5) : value;
   const dash = clean.indexOf("-");
-  if (dash === -1) return { prefix: prefixes[0] ?? "", num: clean };
+  if (dash === -1) return { prefix: "", num: clean };
   return { prefix: clean.slice(0, dash), num: clean.slice(dash + 1) };
 }
 
@@ -27,7 +27,7 @@ function combineJira(prefix: string, num: string): string {
 }
 
 export default function TaskRow({ task, jiraPrefixes, onChange, onRemove, mentionUsers }: Props) {
-  const { prefix, num } = useMemo(() => parseJira(task.jira, jiraPrefixes), [task.jira, jiraPrefixes]);
+  const { prefix, num } = useMemo(() => parseJira(task.jira), [task.jira]);
 
   const setPrefix = (p: string) => onChange({ ...task, jira: combineJira(p, num) });
   const setNum = (n: string) => onChange({ ...task, jira: combineJira(prefix, n) });
