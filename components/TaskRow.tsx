@@ -33,14 +33,23 @@ export default function TaskRow({ task, jiraPrefixes, onChange, onRemove, onAddP
   const [showAdd, setShowAdd] = useState(false);
   const [addVal, setAddVal] = useState("");
   const dropRef = useRef<HTMLDivElement>(null);
+  const addInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setOpen(false);
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setShowAdd(false);
+        setAddVal("");
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    if (showAdd) addInputRef.current?.focus();
+  }, [showAdd]);
 
   const setPrefix = (p: string) => { onChange({ ...task, jira: combineJira(p, num) }); setOpen(false); };
   const setNum = (n: string) => onChange({ ...task, jira: combineJira(prefix, n) });
@@ -121,7 +130,7 @@ export default function TaskRow({ task, jiraPrefixes, onChange, onRemove, onAddP
                 {showAdd ? (
                   <div className="px-2 py-1.5 flex gap-1">
                     <input
-                      autoFocus
+                      ref={addInputRef}
                       value={addVal}
                       onChange={(e) => setAddVal(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
                       onKeyDown={(e) => { if (e.key === "Enter") confirmAdd(); if (e.key === "Escape") { setShowAdd(false); setAddVal(""); } }}
@@ -130,7 +139,7 @@ export default function TaskRow({ task, jiraPrefixes, onChange, onRemove, onAddP
                                  text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50 w-0"
                     />
                     <button
-                      onMouseDown={(e) => { e.preventDefault(); confirmAdd(); }}
+                      onClick={(e) => { e.stopPropagation(); confirmAdd(); }}
                       disabled={!addVal.trim()}
                       className="px-2 py-1 rounded bg-violet-600/20 border border-violet-500/30
                                  text-violet-300 text-xs hover:bg-violet-600/30 transition-colors disabled:opacity-40"
@@ -140,7 +149,7 @@ export default function TaskRow({ task, jiraPrefixes, onChange, onRemove, onAddP
                   </div>
                 ) : (
                   <button
-                    onMouseDown={(e) => { e.preventDefault(); setShowAdd(true); }}
+                    onClick={(e) => { e.stopPropagation(); setShowAdd(true); }}
                     className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-violet-400
                                hover:bg-violet-500/10 transition-colors"
                   >
