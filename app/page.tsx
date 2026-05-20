@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus, Settings, X, BarChart2, LogOut, Users, UserCircle, HelpCircle } from "lucide-react";
+import { ArrowLeft, Plus, Settings, X, BarChart2, LogOut, Users, UserCircle, HelpCircle, Menu } from "lucide-react";
 import Tour, { TourStep, shouldShowTour } from "@/components/Tour";
 import { StandupEntry } from "@/lib/types";
 import { todayISO } from "@/lib/format";
@@ -44,6 +44,7 @@ export default function Home() {
   const [toast, setToast] = useState<string | null>(null);
   const [dbOk, setDbOk] = useState(true);
   const [showTour, setShowTour] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
 
   useEffect(() => {
@@ -148,77 +149,126 @@ export default function Home() {
         </div>
 
         {/* Nav row */}
-        <div className="flex items-center justify-end flex-wrap gap-2">
-          <motion.button
-            id="nav-team"
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={() => router.push("/team")}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
-                       text-slate-500 border border-white/8 bg-white/[0.03]
-                       hover:text-slate-300 hover:border-white/15 transition-all duration-200"
-          >
-            <Users size={12} /> Team
-          </motion.button>
-          {profile?.role === "admin" && (
-            <>
-              <motion.button
-                id="nav-dashboard"
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                onClick={() => router.push("/admin")}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
-                           text-slate-500 border border-white/8 bg-white/[0.03]
-                           hover:text-slate-300 hover:border-white/15 transition-all duration-200"
-              >
-                <BarChart2 size={12} /> Dashboard
-              </motion.button>
-              <motion.button
-                id="nav-users"
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                onClick={() => router.push("/admin/users")}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
-                           text-slate-500 border border-white/8 bg-white/[0.03]
-                           hover:text-slate-300 hover:border-white/15 transition-all duration-200"
-              >
-                <UserCircle size={12} /> Users
-              </motion.button>
-            </>
-          )}
-          <motion.button
-            id="nav-profile"
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={() => router.push("/profile")}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
-                       text-slate-500 border border-white/8 bg-white/[0.03]
-                       hover:text-slate-300 hover:border-white/15 transition-all duration-200"
-          >
-            {profile?.avatar ? (
-              <img src={profile.avatar} className="w-4 h-4 rounded-full object-cover" alt="avatar" />
-            ) : (
-              <UserCircle size={12} />
+        <div className="relative flex items-center justify-end gap-2">
+
+          {/* Desktop nav — hidden on mobile */}
+          <div className="hidden sm:flex items-center gap-2">
+            <motion.button id="nav-team" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => router.push("/team")}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 border border-white/8 bg-white/[0.03] hover:text-slate-300 hover:border-white/15 transition-all">
+              <Users size={12} /> Team
+            </motion.button>
+            {profile?.role === "admin" && (
+              <>
+                <motion.button id="nav-dashboard" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                  onClick={() => router.push("/admin")}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 border border-white/8 bg-white/[0.03] hover:text-slate-300 hover:border-white/15 transition-all">
+                  <BarChart2 size={12} /> Dashboard
+                </motion.button>
+                <motion.button id="nav-users" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                  onClick={() => router.push("/admin/users")}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 border border-white/8 bg-white/[0.03] hover:text-slate-300 hover:border-white/15 transition-all">
+                  <UserCircle size={12} /> Users
+                </motion.button>
+              </>
             )}
-            {profile?.nickname ?? "Profile"}
-          </motion.button>
+            <motion.button id="nav-profile" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => router.push("/profile")}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 border border-white/8 bg-white/[0.03] hover:text-slate-300 hover:border-white/15 transition-all">
+              {profile?.avatar
+                ? <img src={profile.avatar} className="w-4 h-4 rounded-full object-cover" alt="avatar" />
+                : <UserCircle size={12} />}
+              {profile?.nickname ?? "Profile"}
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 border border-white/8 bg-white/[0.03] hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/5 transition-all">
+              <LogOut size={12} /> ออก
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+              onClick={() => setShowTour(true)}
+              className="text-slate-600 hover:text-slate-400 transition-colors p-1" title="แนะนำการใช้งาน">
+              <HelpCircle size={14} />
+            </motion.button>
+          </div>
+
+          {/* Mobile hamburger */}
           <motion.button
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
-              router.push("/login");
-            }}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs
-                       text-slate-500 border border-white/8 bg-white/[0.03]
-                       hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/5 transition-all duration-200"
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setShowMenu((v) => !v)}
+            className="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-white/10
+                       text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all"
           >
-            <LogOut size={12} />
-            ออก
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={showMenu ? "x" : "menu"}
+                initial={{ rotate: -45, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 45, opacity: 0 }} transition={{ duration: 0.15 }}
+              >
+                {showMenu ? <X size={15} /> : <Menu size={15} />}
+              </motion.span>
+            </AnimatePresence>
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-            onClick={() => setShowTour(true)}
-            className="text-slate-600 hover:text-slate-400 transition-colors p-1"
-            title="แนะนำการใช้งาน"
-          >
-            <HelpCircle size={14} />
-          </motion.button>
+
+          {/* Mobile dropdown menu */}
+          <AnimatePresence>
+            {showMenu && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-30 sm:hidden"
+                  onClick={() => setShowMenu(false)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                  transition={{ duration: 0.18 }}
+                  className="absolute right-0 top-10 z-40 w-52 rounded-2xl bg-[#13151f] border border-white/12
+                             shadow-2xl overflow-hidden sm:hidden"
+                >
+                  {/* Profile header */}
+                  <div className="flex items-center gap-2.5 px-4 py-3 border-b border-white/8">
+                    {profile?.avatar
+                      ? <img src={profile.avatar} className="w-8 h-8 rounded-full object-cover flex-shrink-0" alt="avatar" />
+                      : <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-300 text-xs font-bold flex-shrink-0">{profile?.nickname?.[0]?.toUpperCase()}</div>}
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-200 truncate">{profile?.nickname}</p>
+                      <p className="text-[10px] text-slate-600 truncate">{profile?.role}</p>
+                    </div>
+                  </div>
+
+                  {[
+                    { id: "nav-team", icon: Users, label: "Team Daily", path: "/team" },
+                    ...(profile?.role === "admin" ? [
+                      { id: "nav-dashboard", icon: BarChart2, label: "Dashboard", path: "/admin" },
+                      { id: "nav-users", icon: UserCircle, label: "จัดการผู้ใช้", path: "/admin/users" },
+                    ] : []),
+                    { id: "nav-profile", icon: UserCircle, label: "โปรไฟล์", path: "/profile" },
+                  ].map((item) => (
+                    <button key={item.id} id={item.id}
+                      onClick={() => { setShowMenu(false); router.push(item.path); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors">
+                      <item.icon size={14} /> {item.label}
+                    </button>
+                  ))}
+
+                  <div className="border-t border-white/8">
+                    <button
+                      onClick={() => { setShowMenu(false); setShowTour(true); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors">
+                      <HelpCircle size={14} /> แนะนำการใช้งาน
+                    </button>
+                    <button
+                      onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500/70 hover:text-red-400 hover:bg-red-500/5 transition-colors">
+                      <LogOut size={14} /> ออกจากระบบ
+                    </button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
 
