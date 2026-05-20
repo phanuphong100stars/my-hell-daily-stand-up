@@ -101,7 +101,9 @@ export default function Home() {
   };
 
   const handleNew = () => {
-    setEntry({ ...EMPTY, date: todayISO(), name: profile?.nickname || "" });
+    const dj = settings.jiraPrefixes[0] ? `${settings.jiraPrefixes[0]}-` : "";
+    const blank = { jira: dj, desc: "" };
+    setEntry({ ...EMPTY, date: todayISO(), name: profile?.nickname || "", yesterday: [blank], today: [blank] });
     setMode("form");
   };
 
