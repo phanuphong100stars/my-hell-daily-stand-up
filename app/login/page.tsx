@@ -31,7 +31,7 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl bg-white/[0.04] border border-white/10 p-8">
         <h1 className="text-xl font-bold text-white text-center mb-8">
-          📅 Daily <span className="text-violet-400">Standup</span>
+          <span className="text-slate-400">(HD)</span> Hell <span className="text-violet-400">Daily</span>
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

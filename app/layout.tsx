@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Daily Standup",
+  title: "(HD) Hell Daily",
   description: "Generate daily standup reports fast",
 };
 

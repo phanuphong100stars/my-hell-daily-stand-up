@@ -121,7 +121,7 @@ export default function Home() {
         className="text-center mb-8"
       >
         <h1 className="text-2xl font-bold tracking-tight text-white">
-          📅 Daily <span className="text-violet-400">Standup</span>
+          <span className="text-slate-400">(HD)</span> Hell <span className="text-violet-400">Daily</span>
         </h1>
         <p className="text-sm text-slate-500 mt-1">กรอก แล้ว copy เลย</p>
       </motion.div>
