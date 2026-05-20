@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus, Settings, X, BarChart2, LogOut, Users, UserCircle, HelpCircle, Menu } from "lucide-react";
+import { ArrowLeft, Plus, Settings, X, BarChart2, LogOut, Users, UserCircle, HelpCircle, Menu, Tag } from "lucide-react";
 import Tour, { TourStep, shouldShowTour } from "@/components/Tour";
 import { StandupEntry } from "@/lib/types";
 import { todayISO } from "@/lib/format";
@@ -46,6 +46,8 @@ export default function Home() {
   const [showTour, setShowTour] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
+  const [showPrefixSetup, setShowPrefixSetup] = useState(false);
+  const [prefixInput, setPrefixInput] = useState("");
 
   useEffect(() => {
     const s = loadSettings();
@@ -71,6 +73,9 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: u.name, nickname: u.nickname, jiraPrefix: localSettings.jiraPrefix }),
         }).catch(() => {});
+      } else {
+        // no prefix anywhere → force setup
+        setShowPrefixSetup(true);
       }
     });
 
@@ -391,21 +396,14 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">ชื่อ</label>
-                    <input
-                      type="text"
-                      value={entry.name}
-                      onChange={(e) => set("name", e.target.value)}
-                      placeholder="ไมโครเวฟ"
-                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm
-                                 text-slate-200 placeholder:text-slate-600 focus:outline-none
-                                 focus:border-violet-500/60 transition-colors"
-                    />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {profile?.avatar
+                      ? <img src={profile.avatar} className="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="avatar" />
+                      : <div className="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-300 text-[10px] font-bold flex-shrink-0">{profile?.nickname?.[0]?.toUpperCase()}</div>}
+                    <span className="text-sm font-medium text-slate-200 truncate">{profile?.nickname}</span>
                   </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">วันที่</label>
+                  <div className="w-36 flex-shrink-0">
                     <StandupDatePicker
                       value={entry.date}
                       onChange={(iso) => set("date", iso)}
@@ -496,6 +494,83 @@ export default function Home() {
         const steps = profile?.role === "admin" ? [...baseSteps, ...adminSteps] : baseSteps;
         return <Tour steps={steps} onDone={() => setShowTour(false)} />;
       })()}
+
+      {/* Prefix Setup Modal (required — no dismiss) */}
+      <AnimatePresence>
+        {showPrefixSetup && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 z-50 backdrop-blur-sm" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
+                         w-full max-w-sm bg-[#13151f] border border-violet-500/30 rounded-2xl p-6 shadow-2xl"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Tag size={15} className="text-violet-400" />
+                <span className="text-sm font-semibold text-white">ตั้งค่า JIRA Prefix</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-5">ระบุ prefix ของโปรเจกต์คุณ เพื่อให้ระบบสร้าง JIRA ticket ID ได้อัตโนมัติ</p>
+              <div className="mb-4">
+                <label className="block text-xs text-slate-500 mb-1.5">Prefix</label>
+                <div className="flex items-center rounded-lg bg-white/5 border border-white/10
+                                focus-within:border-violet-500/60 transition-colors overflow-hidden">
+                  <span className="pl-3 pr-1 text-xs font-mono text-slate-500 select-none">JIRA-</span>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={prefixInput}
+                    onChange={(e) => setPrefixInput(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && prefixInput.trim()) {
+                        const p = prefixInput.trim();
+                        const next = { ...settings, jiraPrefix: p };
+                        setSettings(next);
+                        saveSettings(next);
+                        fetch("/api/profile", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ name: profile?.name ?? "", nickname: profile?.nickname ?? "", jiraPrefix: p }),
+                        }).catch(() => {});
+                        setShowPrefixSetup(false);
+                      }
+                    }}
+                    placeholder="P100"
+                    className="flex-1 py-2 pr-3 bg-transparent text-sm font-mono text-slate-200
+                               placeholder:text-slate-600 focus:outline-none"
+                  />
+                  <span className="pr-3 text-xs font-mono text-slate-500 select-none">-XX</span>
+                </div>
+                <p className="text-[10px] text-slate-600 mt-1.5">ตัวอย่าง: JIRA-{prefixInput || "P100"}-42</p>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                disabled={!prefixInput.trim()}
+                onClick={() => {
+                  const p = prefixInput.trim();
+                  const next = { ...settings, jiraPrefix: p };
+                  setSettings(next);
+                  saveSettings(next);
+                  fetch("/api/profile", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: profile?.name ?? "", nickname: profile?.nickname ?? "", jiraPrefix: p }),
+                  }).catch(() => {});
+                  setShowPrefixSetup(false);
+                }}
+                className="w-full py-2 rounded-lg bg-violet-600/20 border border-violet-500/40
+                           text-violet-300 text-sm font-semibold hover:bg-violet-600/30
+                           transition-colors disabled:opacity-40"
+              >
+                ยืนยัน
+              </motion.button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Settings Modal */}
       <AnimatePresence>

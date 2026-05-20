@@ -14,8 +14,7 @@ interface Props {
 }
 
 export default function TaskSection({ label, tasks, jiraPrefix, onChange, mentionUsers }: Props) {
-  const defaultJira = jiraPrefix ? `JIRA-${jiraPrefix}-` : "JIRA-";
-  const add = () => onChange([...tasks, { jira: defaultJira, desc: "" }]);
+  const add = () => onChange([...tasks, { jira: "", desc: "" }]);
   const update = (i: number, t: TaskItem) => {
     const next = [...tasks];
     next[i] = t;
@@ -23,7 +22,7 @@ export default function TaskSection({ label, tasks, jiraPrefix, onChange, mentio
   };
   const remove = (i: number) => {
     const next = tasks.filter((_, idx) => idx !== i);
-    onChange(next.length ? next : [{ jira: defaultJira, desc: "" }]);
+    onChange(next.length ? next : [{ jira: "", desc: "" }]);
   };
 
   return (
