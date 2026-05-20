@@ -28,8 +28,8 @@ export default function TaskRow({ task, jiraPrefix, onChange, onRemove, mentionU
           type="text"
           value={task.jira}
           onChange={(e) => onChange({ ...task, jira: e.target.value })}
-          placeholder={jiraPrefix ? `${jiraPrefix}-XX` : "P100-XX"}
-          className="w-28 px-3 py-2 bg-transparent text-sm font-mono text-slate-300
+          placeholder="JIRA-P100-XX"
+          className="w-36 px-3 py-2 bg-transparent text-sm font-mono text-slate-300
                      placeholder:text-slate-600 focus:outline-none"
         />
       </div>

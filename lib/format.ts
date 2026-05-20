@@ -26,9 +26,11 @@ export function relativeDay(iso: string): "today" | "yesterday" | "tomorrow" | n
 export function buildJiraId(suffix: string, prefix: string): string {
   const v = suffix.trim();
   if (!v) return "";
-  // already has a dash → treat as full id (user typed/overrode prefix themselves)
+  // full id already typed by user (starts with JIRA-)
+  if (v.toUpperCase().startsWith("JIRA-")) return v;
+  // has dash but no JIRA- prefix → user typed e.g. "P100-42"
   if (v.includes("-")) return `JIRA-${v}`;
-  // legacy: just a number/code, combine with prefix
+  // legacy: just a number, combine with default prefix
   if (prefix.trim()) return `JIRA-${prefix.trim()}-${v}`;
   return v;
 }
