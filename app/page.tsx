@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus, Settings, X, BarChart2 } from "lucide-react";
+import { ArrowLeft, Plus, Settings, X, BarChart2, LogOut } from "lucide-react";
 import { StandupEntry } from "@/lib/types";
 import { todayISO } from "@/lib/format";
 import { AppSettings, loadSettings, saveSettings, DEFAULT_SETTINGS } from "@/lib/settings";
@@ -12,6 +12,7 @@ import AutoTextarea from "@/components/AutoTextarea";
 import StatsPanel from "@/components/StatsPanel";
 import StandupDatePicker from "@/components/StandupDatePicker";
 import { saveStandup, updateStandup, getStandups, deleteStandup } from "@/lib/standup";
+import { useRouter } from "next/navigation";
 
 const EMPTY: StandupEntry = {
   name: "",
@@ -31,6 +32,7 @@ export default function Home() {
   const [showStats, setShowStats] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [dbOk, setDbOk] = useState(true);
@@ -184,6 +186,17 @@ export default function Home() {
                       className="text-slate-500 hover:text-slate-300 transition-colors"
                     >
                       <Settings size={14} />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={async () => {
+                        await fetch("/api/auth/logout", { method: "POST" });
+                        router.push("/login");
+                      }}
+                      className="text-slate-500 hover:text-red-400 transition-colors"
+                    >
+                      <LogOut size={14} />
                     </motion.button>
                   </div>
                 </div>
