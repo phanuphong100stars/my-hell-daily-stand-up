@@ -48,6 +48,7 @@ export default function Home() {
   const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
   const [showPrefixSetup, setShowPrefixSetup] = useState(false);
   const [prefixInput, setPrefixInput] = useState("");
+  const [newPrefixInput, setNewPrefixInput] = useState("");
 
   useEffect(() => {
     const s = loadSettings();
@@ -414,9 +415,9 @@ export default function Home() {
 
                 <div className="border-t border-white/8" />
 
-                <TaskSection label="✅ เมื่อวาน" tasks={entry.yesterday} jiraPrefix={settings.jiraPrefix} onChange={(v) => set("yesterday", v)} mentionUsers={mentionUsers} />
+                <TaskSection label="✅ เมื่อวาน" tasks={entry.yesterday} jiraPrefixes={settings.jiraPrefixes} onChange={(v) => set("yesterday", v)} mentionUsers={mentionUsers} />
                 <div className="border-t border-white/8" />
-                <TaskSection label="🎯 วันนี้" tasks={entry.today} jiraPrefix={settings.jiraPrefix} onChange={(v) => set("today", v)} mentionUsers={mentionUsers} />
+                <TaskSection label="🎯 วันนี้" tasks={entry.today} jiraPrefixes={settings.jiraPrefixes} onChange={(v) => set("today", v)} mentionUsers={mentionUsers} />
                 <div className="border-t border-white/8" />
 
                 <div className="space-y-3">
@@ -513,51 +514,78 @@ export default function Home() {
                 <Tag size={15} className="text-violet-400" />
                 <span className="text-sm font-semibold text-white">ตั้งค่า JIRA Prefix</span>
               </div>
-              <p className="text-xs text-slate-500 mb-5">ระบุ prefix ของโปรเจกต์คุณ เพื่อให้ระบบสร้าง JIRA ticket ID ได้อัตโนมัติ</p>
-              <div className="mb-4">
-                <label className="block text-xs text-slate-500 mb-1.5">Prefix</label>
-                <div className="flex items-center rounded-lg bg-white/5 border border-white/10
+              <p className="text-xs text-slate-500 mb-5">เพิ่ม prefix โปรเจกต์ที่คุณทำงานด้วย สามารถมีได้หลาย prefix</p>
+
+              {/* Existing list */}
+              {settings.jiraPrefixes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {settings.jiraPrefixes.map((p) => (
+                    <span key={p} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30 text-xs font-mono text-violet-300">
+                      JIRA-{p}-XX
+                      <button onClick={() => {
+                        const next = { ...settings, jiraPrefixes: settings.jiraPrefixes.filter((x) => x !== p), jiraPrefix: settings.jiraPrefix === p ? (settings.jiraPrefixes.filter((x) => x !== p)[0] ?? "") : settings.jiraPrefix };
+                        setSettings(next); saveSettings(next);
+                      }} className="text-violet-500 hover:text-red-400 transition-colors ml-0.5">
+                        <X size={10} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Add input */}
+              <div className="flex gap-2 mb-4">
+                <div className="flex flex-1 items-center rounded-lg bg-white/5 border border-white/10
                                 focus-within:border-violet-500/60 transition-colors overflow-hidden">
                   <span className="pl-3 pr-1 text-xs font-mono text-slate-500 select-none">JIRA-</span>
                   <input
                     autoFocus
                     type="text"
                     value={prefixInput}
-                    onChange={(e) => setPrefixInput(e.target.value.toUpperCase())}
+                    onChange={(e) => setPrefixInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && prefixInput.trim()) {
                         const p = prefixInput.trim();
-                        const next = { ...settings, jiraPrefix: p };
-                        setSettings(next);
-                        saveSettings(next);
-                        fetch("/api/profile", {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ name: profile?.name ?? "", nickname: profile?.nickname ?? "", jiraPrefix: p }),
-                        }).catch(() => {});
-                        setShowPrefixSetup(false);
+                        if (!settings.jiraPrefixes.includes(p)) {
+                          const next = { ...settings, jiraPrefixes: [...settings.jiraPrefixes, p], jiraPrefix: settings.jiraPrefix || p };
+                          setSettings(next); saveSettings(next);
+                        }
+                        setPrefixInput("");
                       }
                     }}
                     placeholder="P100"
-                    className="flex-1 py-2 pr-3 bg-transparent text-sm font-mono text-slate-200
-                               placeholder:text-slate-600 focus:outline-none"
+                    className="flex-1 py-2 pr-2 bg-transparent text-sm font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none"
                   />
                   <span className="pr-3 text-xs font-mono text-slate-500 select-none">-XX</span>
                 </div>
-                <p className="text-[10px] text-slate-600 mt-1.5">ตัวอย่าง: JIRA-{prefixInput || "P100"}-42</p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                  disabled={!prefixInput.trim()}
+                  onClick={() => {
+                    const p = prefixInput.trim();
+                    if (p && !settings.jiraPrefixes.includes(p)) {
+                      const next = { ...settings, jiraPrefixes: [...settings.jiraPrefixes, p], jiraPrefix: settings.jiraPrefix || p };
+                      setSettings(next); saveSettings(next);
+                    }
+                    setPrefixInput("");
+                  }}
+                  className="px-3 py-2 rounded-lg bg-violet-600/20 border border-violet-500/40 text-violet-300 text-xs hover:bg-violet-600/30 transition-colors disabled:opacity-40"
+                >
+                  <Plus size={13} />
+                </motion.button>
               </div>
+
               <motion.button
                 whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-                disabled={!prefixInput.trim()}
+                disabled={settings.jiraPrefixes.length === 0}
                 onClick={() => {
-                  const p = prefixInput.trim();
-                  const next = { ...settings, jiraPrefix: p };
-                  setSettings(next);
-                  saveSettings(next);
+                  const first = settings.jiraPrefixes[0];
+                  const next = { ...settings, jiraPrefix: settings.jiraPrefix || first };
+                  setSettings(next); saveSettings(next);
                   fetch("/api/profile", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name: profile?.name ?? "", nickname: profile?.nickname ?? "", jiraPrefix: p }),
+                    body: JSON.stringify({ name: profile?.name ?? "", nickname: profile?.nickname ?? "", jiraPrefix: next.jiraPrefix }),
                   }).catch(() => {});
                   setShowPrefixSetup(false);
                 }}
@@ -593,29 +621,70 @@ export default function Home() {
                 <span className="text-sm font-semibold text-slate-200">ตั้งค่า</span>
                 <button onClick={() => setShowSettings(false)} className="text-slate-500 hover:text-slate-300"><X size={16} /></button>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">JIRA Prefix</label>
-                  <div className="flex items-center rounded-lg bg-white/5 border border-white/10
+              <div className="space-y-3">
+                <label className="block text-xs text-slate-500">JIRA Prefixes</label>
+
+                {/* List */}
+                {settings.jiraPrefixes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {settings.jiraPrefixes.map((p) => (
+                      <span key={p} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30 text-xs font-mono text-violet-300">
+                        JIRA-{p}-XX
+                        <button onClick={() => {
+                          const next = { ...settings, jiraPrefixes: settings.jiraPrefixes.filter((x) => x !== p), jiraPrefix: settings.jiraPrefix === p ? (settings.jiraPrefixes.filter((x) => x !== p)[0] ?? "") : settings.jiraPrefix };
+                          setSettings(next);
+                        }} className="text-violet-500 hover:text-red-400 transition-colors ml-0.5">
+                          <X size={10} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add row */}
+                <div className="flex gap-2">
+                  <div className="flex flex-1 items-center rounded-lg bg-white/5 border border-white/10
                                   focus-within:border-violet-500/60 transition-colors overflow-hidden">
                     <span className="pl-3 pr-1 text-xs font-mono text-slate-500 select-none">JIRA-</span>
                     <input
                       type="text"
-                      value={settings.jiraPrefix}
-                      onChange={(e) => setSettings((s) => ({ ...s, jiraPrefix: e.target.value }))}
+                      value={newPrefixInput}
+                      onChange={(e) => setNewPrefixInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && newPrefixInput.trim()) {
+                          const p = newPrefixInput.trim();
+                          if (!settings.jiraPrefixes.includes(p)) {
+                            setSettings((s) => ({ ...s, jiraPrefixes: [...s.jiraPrefixes, p], jiraPrefix: s.jiraPrefix || p }));
+                          }
+                          setNewPrefixInput("");
+                        }
+                      }}
                       placeholder="P100"
-                      className="flex-1 py-2 pr-3 bg-transparent text-sm font-mono text-slate-200
-                                 placeholder:text-slate-600 focus:outline-none"
+                      className="flex-1 py-2 pr-2 bg-transparent text-sm font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none"
                     />
                     <span className="pr-3 text-xs font-mono text-slate-500 select-none">-XX</span>
                   </div>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                    disabled={!newPrefixInput.trim()}
+                    onClick={() => {
+                      const p = newPrefixInput.trim();
+                      if (p && !settings.jiraPrefixes.includes(p)) {
+                        setSettings((s) => ({ ...s, jiraPrefixes: [...s.jiraPrefixes, p], jiraPrefix: s.jiraPrefix || p }));
+                      }
+                      setNewPrefixInput("");
+                    }}
+                    className="px-3 py-2 rounded-lg bg-violet-600/20 border border-violet-500/40 text-violet-300 text-xs hover:bg-violet-600/30 transition-colors disabled:opacity-40"
+                  >
+                    <Plus size={13} />
+                  </motion.button>
                 </div>
               </div>
+
               <motion.button
                 whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                 onClick={() => {
                   saveSettings(settings);
-                  // Persist jiraPrefix to server profile
                   fetch("/api/profile", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
