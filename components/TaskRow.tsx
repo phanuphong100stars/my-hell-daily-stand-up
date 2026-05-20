@@ -52,6 +52,7 @@ export default function TaskRow({ task, jiraPrefixes, onChange, onRemove, mentio
                        appearance-none"
             style={{ maxWidth: "80px" }}
           >
+            <option value="" className="bg-[#13151f] text-slate-500">–</option>
             {jiraPrefixes.map((p) => (
               <option key={p} value={p} className="bg-[#13151f]">{p}</option>
             ))}
