@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!await requireAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const session = await requireAdmin(req);
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id, newPassword } = await req.json();
   if (!id || !newPassword) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
