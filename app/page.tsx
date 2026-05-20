@@ -501,6 +501,7 @@ export default function Home() {
         {showPrefixSetup && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowPrefixSetup(false)}
               className="fixed inset-0 bg-black/80 z-50 backdrop-blur-sm" />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 8 }}
@@ -510,9 +511,12 @@ export default function Home() {
               className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
                          w-full max-w-sm bg-[#13151f] border border-violet-500/30 rounded-2xl p-6 shadow-2xl"
             >
-              <div className="flex items-center gap-2 mb-1">
-                <Tag size={15} className="text-violet-400" />
-                <span className="text-sm font-semibold text-white">ตั้งค่า JIRA Prefix</span>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <Tag size={15} className="text-violet-400" />
+                  <span className="text-sm font-semibold text-white">ตั้งค่า JIRA Prefix</span>
+                </div>
+                <button onClick={() => setShowPrefixSetup(false)} className="text-slate-500 hover:text-slate-300"><X size={15} /></button>
               </div>
               <p className="text-xs text-slate-500 mb-5">เพิ่ม prefix โปรเจกต์ที่คุณทำงานด้วย สามารถมีได้หลาย prefix</p>
 
@@ -577,9 +581,8 @@ export default function Home() {
 
               <motion.button
                 whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-                disabled={settings.jiraPrefixes.length === 0}
                 onClick={() => {
-                  const first = settings.jiraPrefixes[0];
+                  const first = settings.jiraPrefixes[0] ?? "";
                   const next = { ...settings, jiraPrefix: settings.jiraPrefix || first };
                   setSettings(next); saveSettings(next);
                   fetch("/api/profile", {
