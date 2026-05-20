@@ -6,7 +6,7 @@ import { listUsers, createUser, findUserByEmail, findUserById, updateUserPasswor
 async function requireAdmin(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySession(token) : null;
-  if (!session || session.role !== "admin") return null;
+  if (!session || (session.role !== "admin" && session.role !== "superAdmin")) return null;
   return session;
 }
 
@@ -53,7 +53,8 @@ export async function PATCH(req: NextRequest) {
 
   const target = await findUserById(id);
   if (!target) return NextResponse.json({ error: "ไม่พบผู้ใช้" }, { status: 404 });
-  if (target.role === "admin") return NextResponse.json({ error: "ไม่สามารถรีเซ็ตรหัสผ่าน admin ได้" }, { status: 403 });
+  if (target.role === "admin" && session.role !== "superAdmin") return NextResponse.json({ error: "ไม่สามารถรีเซ็ตรหัสผ่าน admin ได้" }, { status: 403 });
+  if (target.role === "superAdmin") return NextResponse.json({ error: "ไม่สามารถรีเซ็ตรหัสผ่าน superAdmin ได้" }, { status: 403 });
 
   const hash = await bcrypt.hash(newPassword.trim(), 12);
   await updateUserPassword(id, hash);
@@ -69,7 +70,8 @@ export async function DELETE(req: NextRequest) {
 
   const target = await findUserById(id);
   if (!target) return NextResponse.json({ error: "ไม่พบผู้ใช้" }, { status: 404 });
-  if (target.role === "admin") return NextResponse.json({ error: "ไม่สามารถลบ admin ได้" }, { status: 403 });
+  if (target.role === "superAdmin") return NextResponse.json({ error: "ไม่สามารถลบ superAdmin ได้" }, { status: 403 });
+  if (target.role === "admin" && session.role !== "superAdmin") return NextResponse.json({ error: "ไม่สามารถลบ admin ได้" }, { status: 403 });
   if (target.id === session.sub) return NextResponse.json({ error: "ไม่สามารถลบตัวเองได้" }, { status: 403 });
 
   await deleteUser(id);

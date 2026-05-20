@@ -9,6 +9,7 @@ export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [myRole, setMyRole] = useState<string>("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ email: "", password: "", name: "", nickname: "", role: "user", requiresDaily: true });
   const [error, setError] = useState("");
@@ -26,6 +27,7 @@ export default function AdminUsersPage() {
   const [deleteSaving, setDeleteSaving] = useState(false);
 
   useEffect(() => {
+    fetch("/api/profile").then((r) => r.json()).then((p) => setMyRole(p.role ?? ""));
     fetch("/api/admin/users")
       .then((r) => {
         if (r.status === 403) { router.push("/"); return null; }
@@ -145,7 +147,11 @@ export default function AdminUsersPage() {
                 </p>
                 <p className="text-xs text-slate-600 truncate">{u.email}</p>
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full border ${u.role === "admin" ? "border-violet-500/40 text-violet-400 bg-violet-500/10" : "border-white/10 text-slate-500"}`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                u.role === "superAdmin" ? "border-amber-400/50 text-amber-300 bg-amber-500/10" :
+                u.role === "admin" ? "border-violet-500/40 text-violet-400 bg-violet-500/10" :
+                "border-white/10 text-slate-500"
+              }`}>
                 {u.role}
               </span>
               {!u.requiresDaily && (
@@ -154,16 +160,18 @@ export default function AdminUsersPage() {
               {u.firstLogin && (
                 <span className="text-xs text-amber-500/80">ยังไม่ได้ login</span>
               )}
-              {u.role !== "admin" && (
+              {u.role !== "superAdmin" && (myRole === "superAdmin" || u.role === "user") && (
                 <>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                    onClick={() => { setResetTarget(u); setResetPw(""); setResetError(""); }}
-                    className="p-1.5 rounded-lg text-slate-600 hover:text-amber-400 hover:bg-amber-500/10 transition-all"
-                    title="รีเซ็ตรหัสผ่าน"
-                  >
-                    <KeyRound size={13} />
-                  </motion.button>
+                  {(u.role === "user" || myRole === "superAdmin") && (
+                    <motion.button
+                      whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                      onClick={() => { setResetTarget(u); setResetPw(""); setResetError(""); }}
+                      className="p-1.5 rounded-lg text-slate-600 hover:text-amber-400 hover:bg-amber-500/10 transition-all"
+                      title="รีเซ็ตรหัสผ่าน"
+                    >
+                      <KeyRound size={13} />
+                    </motion.button>
+                  )}
                   <motion.button
                     whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                     onClick={() => { setDeleteTarget(u); setDeleteError(""); }}

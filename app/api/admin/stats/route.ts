@@ -5,7 +5,7 @@ import { getDb } from "@/lib/mongo";
 async function requireAdmin(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySession(token) : null;
-  if (!session || session.role !== "admin") return null;
+  if (!session || (session.role !== "admin" && session.role !== "superAdmin")) return null;
   return session;
 }
 

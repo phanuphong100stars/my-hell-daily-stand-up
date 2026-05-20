@@ -197,7 +197,7 @@ export default function Home() {
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 border border-white/8 bg-white/[0.03] hover:text-slate-300 hover:border-white/15 transition-all">
               <Users size={12} /> Team
             </motion.button>
-            {profile?.role === "admin" && (
+            {profile?.role === "admin" || profile?.role === "superAdmin" && (
               <>
                 <motion.button id="nav-dashboard" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                   onClick={() => router.push("/admin")}
@@ -279,7 +279,7 @@ export default function Home() {
 
                   {[
                     { id: "nav-team", icon: Users, label: "Team Daily", path: "/team" },
-                    ...(profile?.role === "admin" ? [
+                    ...(profile?.role === "admin" || profile?.role === "superAdmin" ? [
                       { id: "nav-dashboard", icon: BarChart2, label: "Dashboard", path: "/admin" },
                       { id: "nav-users", icon: UserCircle, label: "จัดการผู้ใช้", path: "/admin/users" },
                     ] : []),
@@ -508,7 +508,7 @@ export default function Home() {
           { target: "nav-dashboard", title: "Admin Dashboard", desc: "ดูภาพรวมทีมวันนี้ ใครส่งแล้ว ใครยังไม่ส่ง attendance 7 วัน และ ranking" },
           { target: "nav-users", title: "จัดการผู้ใช้", desc: "เพิ่มผู้ใช้ใหม่ และรีเซ็ตรหัสผ่านได้ที่นี่ (admin ไม่สามารถรีเซ็ตกันเองได้)" },
         ];
-        const steps = profile?.role === "admin" ? [...baseSteps, ...adminSteps] : baseSteps;
+        const steps = profile?.role === "admin" || profile?.role === "superAdmin" ? [...baseSteps, ...adminSteps] : baseSteps;
         return <Tour steps={steps} onDone={() => setShowTour(false)} />;
       })()}
 

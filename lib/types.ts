@@ -22,7 +22,7 @@ export interface User {
   name: string;
   nickname: string;
   avatar?: string;
-  role: "admin" | "user";
+  role: "superAdmin" | "admin" | "user";
   firstLogin: boolean;
   jiraPrefix?: string;
   requiresDaily: boolean;
@@ -35,7 +35,7 @@ export interface PublicUser {
   name: string;
   nickname: string;
   avatar?: string;
-  role: "admin" | "user";
+  role: "superAdmin" | "admin" | "user";
   firstLogin: boolean;
   jiraPrefix?: string;
   requiresDaily: boolean;
@@ -47,6 +47,6 @@ export interface SessionPayload {
   email: string;
   name: string;
   nickname: string;
-  role: "admin" | "user";
+  role: "superAdmin" | "admin" | "user";
   firstLogin: boolean;
 }
