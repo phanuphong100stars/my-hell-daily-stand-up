@@ -3,7 +3,9 @@
     "allow": [
       "Bash(rtk ls *)",
       "Bash(rtk grep *)",
-      "Bash(rtk read *)"
+      "Bash(rtk read *)",
+      "Bash(rtk find *)",
+      "Bash(npm install *)"
     ]
   }
 }

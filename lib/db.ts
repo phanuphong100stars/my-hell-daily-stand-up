@@ -1,4 +1,5 @@
 import { MongoClient, Collection } from "mongodb";
+import { attachDatabasePool } from "@vercel/functions";
 import { StandupEntry } from "./types";
 
 const uri = process.env.MONGODB_URI!;
@@ -10,7 +11,9 @@ declare global {
 let clientPromise: Promise<MongoClient>;
 
 if (!global._mongoClientPromise) {
-  global._mongoClientPromise = new MongoClient(uri).connect();
+  const client = new MongoClient(uri);
+  attachDatabasePool(client);
+  global._mongoClientPromise = client.connect();
 }
 clientPromise = global._mongoClientPromise;
 
