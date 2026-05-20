@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     .map((u) => ({ id: u.id, nickname: u.nickname, name: u.name, avatar: u.avatar }));
 
   const todayMissing = allUsers
-    .filter((u) => !submittedTodayIds.has(u.id))
+    .filter((u) => (u.requiresDaily ?? true) && !submittedTodayIds.has(u.id))
     .map((u) => ({ id: u.id, nickname: u.nickname, name: u.name, avatar: u.avatar }));
 
   // 7-day attendance grid per user

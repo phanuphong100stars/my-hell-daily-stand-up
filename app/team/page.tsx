@@ -9,7 +9,7 @@ import { buildText, formatDate } from "@/lib/format";
 import StandupDatePicker from "@/components/StandupDatePicker";
 
 interface TeamEntry extends StandupEntry {
-  user?: { id: string; name: string; nickname: string; avatar?: string } | null;
+  user?: { id: string; name: string; nickname: string; avatar?: string; jiraPrefix?: string } | null;
 }
 
 export default function TeamPage() {
@@ -126,7 +126,7 @@ export default function TeamPage() {
                       </div>
                     </div>
                     <pre className="text-xs text-slate-400 whitespace-pre-wrap font-mono leading-relaxed bg-white/[0.02] rounded-lg p-3 overflow-x-auto">
-                      {buildText(entry)}
+                      {buildText(entry, entry.user?.jiraPrefix ?? "")}
                     </pre>
                   </motion.div>
                 ))}

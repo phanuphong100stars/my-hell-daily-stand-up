@@ -32,12 +32,12 @@ export async function GET(req: NextRequest) {
     blockers: s.blockers,
     help: s.help,
     createdAt: s.createdAt,
-    user: s.userId ? userMap[s.userId] ?? null : null,
+    user: s.userId ? (userMap[s.userId] ? { ...userMap[s.userId] } : null) : null,
   }));
 
-  // users who haven't submitted for the filtered date
+  // users who haven't submitted for the filtered date (only those required to do daily)
   const missing = date
-    ? users.filter((u) => !standups.some((s) => s.userId === u.id))
+    ? users.filter((u) => u.requiresDaily && !standups.some((s) => s.userId === u.id))
     : [];
 
   return NextResponse.json({ entries, missing });

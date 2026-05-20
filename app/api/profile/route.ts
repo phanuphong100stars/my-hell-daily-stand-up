@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     id: user.id, email: user.email, name: user.name, nickname: user.nickname,
     avatar: user.avatar, role: user.role, firstLogin: user.firstLogin,
+    jiraPrefix: (user as any).jiraPrefix ?? "",
+    requiresDaily: (user as any).requiresDaily ?? true,
   });
 }
 
@@ -22,7 +24,7 @@ export async function PUT(req: NextRequest) {
   const session = token ? await verifySession(token) : null;
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { name, nickname, avatar } = await req.json();
+  const { name, nickname, avatar, jiraPrefix } = await req.json();
   if (!name?.trim() || !nickname?.trim()) {
     return NextResponse.json({ error: "ชื่อและชื่อเล่นจำเป็น" }, { status: 400 });
   }
@@ -37,6 +39,7 @@ export async function PUT(req: NextRequest) {
     nickname: nickname.trim(),
     avatar: avatar ?? undefined,
     firstLogin: false,
+    ...(jiraPrefix !== undefined ? { jiraPrefix: jiraPrefix.trim() } : {}),
   });
 
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });

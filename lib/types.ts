@@ -24,6 +24,8 @@ export interface User {
   avatar?: string;
   role: "admin" | "user";
   firstLogin: boolean;
+  jiraPrefix?: string;
+  requiresDaily: boolean;
   createdAt: number;
 }
 
@@ -35,6 +37,8 @@ export interface PublicUser {
   avatar?: string;
   role: "admin" | "user";
   firstLogin: boolean;
+  jiraPrefix?: string;
+  requiresDaily: boolean;
   createdAt: number;
 }
 

@@ -55,6 +55,14 @@ export default function Home() {
       setProfile(u);
       setEntry((e) => ({ ...e, name: u.nickname ?? e.name }));
       if (shouldShowTour()) setTimeout(() => setShowTour(true), 800);
+      // Sync jiraPrefix from server profile → local settings (server wins)
+      if (u.jiraPrefix) {
+        setSettings((s) => {
+          const next = { ...s, jiraPrefix: u.jiraPrefix };
+          saveSettings(next);
+          return next;
+        });
+      }
     });
 
     fetch("/api/users").then((r) => r.json()).then((u) => {
@@ -523,6 +531,12 @@ export default function Home() {
                 whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                 onClick={() => {
                   saveSettings(settings);
+                  // Persist jiraPrefix to server profile
+                  fetch("/api/profile", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: profile?.name ?? "", nickname: profile?.nickname ?? "", jiraPrefix: settings.jiraPrefix }),
+                  }).catch(() => {});
                   setShowSettings(false);
                   showToast("บันทึกการตั้งค่าแล้ว ✓");
                 }}

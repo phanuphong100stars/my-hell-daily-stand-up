@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!await requireAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { email, password, name, nickname, role = "user" } = await req.json();
+  const { email, password, name, nickname, role = "user", requiresDaily = true } = await req.json();
   if (!email || !password || !name || !nickname) {
     return NextResponse.json({ error: "กรุณากรอกข้อมูลให้ครบ" }, { status: 400 });
   }
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     nickname: nickname.trim(),
     role: role === "admin" ? "admin" : "user",
     firstLogin: true,
+    requiresDaily: requiresDaily !== false,
   });
 
   return NextResponse.json({ ok: true }, { status: 201 });

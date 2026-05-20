@@ -10,7 +10,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", name: "", nickname: "", role: "user" });
+  const [form, setForm] = useState({ email: "", password: "", name: "", nickname: "", role: "user", requiresDaily: true });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -42,7 +42,7 @@ export default function AdminUsersPage() {
       const updated = await fetch("/api/admin/users").then((r) => r.json());
       setUsers(updated);
       setShowForm(false);
-      setForm({ email: "", password: "", name: "", nickname: "", role: "user" });
+      setForm({ email: "", password: "", name: "", nickname: "", role: "user", requiresDaily: true });
     } else {
       const d = await res.json();
       setError(d.error);
@@ -124,6 +124,9 @@ export default function AdminUsersPage() {
               <span className={`text-xs px-2 py-0.5 rounded-full border ${u.role === "admin" ? "border-violet-500/40 text-violet-400 bg-violet-500/10" : "border-white/10 text-slate-500"}`}>
                 {u.role}
               </span>
+              {!u.requiresDaily && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded border border-slate-700 text-slate-600">ไม่บังคับ</span>
+              )}
               {u.firstLogin && (
                 <span className="text-xs text-amber-500/80">ยังไม่ได้ login</span>
               )}
@@ -187,6 +190,23 @@ export default function AdminUsersPage() {
                       <option value="admin">admin</option>
                     </select>
                   </div>
+                  <label className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 cursor-pointer">
+                    <div>
+                      <p className="text-xs text-slate-300">จำเป็นต้องส่ง daily</p>
+                      <p className="text-[10px] text-slate-600 mt-0.5">นับใน missing ถ้าไม่ส่ง</p>
+                    </div>
+                    <div
+                      onClick={() => setForm((f) => ({ ...f, requiresDaily: !f.requiresDaily }))}
+                      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0
+                        ${form.requiresDaily ? "bg-violet-500" : "bg-white/10"}`}
+                    >
+                      <motion.div
+                        animate={{ x: form.requiresDaily ? 16 : 2 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow"
+                      />
+                    </div>
+                  </label>
                   {error && <p className="text-xs text-red-400">{error}</p>}
                   <button type="submit" disabled={saving}
                     className="w-full py-2 rounded-lg bg-violet-600/20 border border-violet-500/40

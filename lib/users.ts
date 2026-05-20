@@ -9,7 +9,12 @@ async function col(): Promise<UserCol> {
 }
 
 function toPublic(u: User): PublicUser {
-  return { id: u.id, email: u.email, name: u.name, nickname: u.nickname, avatar: u.avatar, role: u.role, firstLogin: u.firstLogin, createdAt: u.createdAt };
+  return {
+    id: u.id, email: u.email, name: u.name, nickname: u.nickname, avatar: u.avatar,
+    role: u.role, firstLogin: u.firstLogin, jiraPrefix: u.jiraPrefix,
+    requiresDaily: u.requiresDaily ?? true,
+    createdAt: u.createdAt,
+  };
 }
 
 export async function findUserByEmail(email: string): Promise<User | null> {
@@ -42,7 +47,7 @@ export async function upsertUserByEmail(user: Omit<User, "createdAt">): Promise<
   );
 }
 
-export async function updateUser(id: string, patch: Partial<Pick<User, "name" | "nickname" | "avatar" | "firstLogin">>): Promise<PublicUser | null> {
+export async function updateUser(id: string, patch: Partial<Pick<User, "name" | "nickname" | "avatar" | "firstLogin" | "jiraPrefix" | "requiresDaily">>): Promise<PublicUser | null> {
   const c = await col();
   await c.updateOne({ id }, { $set: patch });
   const updated = await c.findOne({ id });
