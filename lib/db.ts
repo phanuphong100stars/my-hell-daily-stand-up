@@ -23,10 +23,11 @@ export async function dbInsert(entry: StandupEntry): Promise<string> {
   return id;
 }
 
-export async function dbList(limit = 20, offset = 0): Promise<StandupEntry[]> {
+export async function dbList(limit = 20, offset = 0, userId?: string): Promise<StandupEntry[]> {
   const c = await col();
+  const query = userId ? { userId } : {};
   const docs = await c
-    .find({})
+    .find(query)
     .sort({ date: -1, createdAt: -1 })
     .skip(offset)
     .limit(limit)

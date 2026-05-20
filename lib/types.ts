@@ -5,6 +5,7 @@ export interface TaskItem {
 
 export interface StandupEntry {
   id?: string;
+  userId?: string;
   name: string;
   date: string;
   yesterday: TaskItem[];
@@ -22,6 +23,18 @@ export interface User {
   nickname: string;
   avatar?: string;
   role: "admin" | "user";
+  firstLogin: boolean;
+  createdAt: number;
+}
+
+export interface PublicUser {
+  id: string;
+  email: string;
+  name: string;
+  nickname: string;
+  avatar?: string;
+  role: "admin" | "user";
+  firstLogin: boolean;
   createdAt: number;
 }
 
@@ -31,4 +44,5 @@ export interface SessionPayload {
   name: string;
   nickname: string;
   role: "admin" | "user";
+  firstLogin: boolean;
 }

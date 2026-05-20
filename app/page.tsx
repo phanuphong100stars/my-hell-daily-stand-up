@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus, Settings, X, BarChart2, LogOut } from "lucide-react";
+import { ArrowLeft, Plus, Settings, X, BarChart2, LogOut, Users, UserCircle } from "lucide-react";
 import { StandupEntry } from "@/lib/types";
 import { todayISO } from "@/lib/format";
 import { AppSettings, loadSettings, saveSettings, DEFAULT_SETTINGS } from "@/lib/settings";
@@ -11,8 +11,11 @@ import HistoryPanel from "@/components/HistoryPanel";
 import AutoTextarea from "@/components/AutoTextarea";
 import StatsPanel from "@/components/StatsPanel";
 import StandupDatePicker from "@/components/StandupDatePicker";
+import { HistorySkeleton } from "@/components/Skeleton";
 import { saveStandup, updateStandup, getStandups, deleteStandup } from "@/lib/standup";
 import { useRouter } from "next/navigation";
+
+interface ProfileInfo { nickname: string; name: string; role: string; avatar?: string }
 
 const EMPTY: StandupEntry = {
   name: "",
@@ -24,15 +27,17 @@ const EMPTY: StandupEntry = {
 };
 
 export default function Home() {
+  const router = useRouter();
+  const [profile, setProfile] = useState<ProfileInfo | null>(null);
   const [entry, setEntry] = useState<StandupEntry>({ ...EMPTY, date: todayISO() });
   const [history, setHistory] = useState<StandupEntry[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [mode, setMode] = useState<"list" | "form">("list");
   const [showStats, setShowStats] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [dbOk, setDbOk] = useState(true);
@@ -40,11 +45,19 @@ export default function Home() {
   useEffect(() => {
     const s = loadSettings();
     setSettings(s);
+
+    // Load profile and use nickname as default name
+    fetch("/api/profile").then((r) => r.json()).then((u) => {
+      setProfile(u);
+      setEntry((e) => ({ ...e, name: u.nickname ?? e.name }));
+    });
+
     getStandups(0).then((rows) => {
       setHistory(rows);
       setHasMore(rows.length === 20);
-      if (rows.length > 0) setEntry(rows[0]);
-    }).catch(() => setDbOk(false));
+      if (rows.length > 0) setEntry((e) => ({ ...rows[0], name: e.name }));
+      setHistoryLoading(false);
+    }).catch(() => { setDbOk(false); setHistoryLoading(false); });
   }, []);
 
   const set = <K extends keyof StandupEntry>(key: K, val: StandupEntry[K]) =>
@@ -57,7 +70,7 @@ export default function Home() {
 
   const handleNew = () => {
     const s = loadSettings();
-    setEntry({ ...EMPTY, date: todayISO(), name: s.defaultName || "" });
+    setEntry({ ...EMPTY, date: todayISO(), name: profile?.nickname || s.defaultName || "" });
     setMode("form");
   };
 
@@ -126,21 +139,57 @@ export default function Home() {
           </h1>
           <p className="text-sm text-slate-500 mt-1">กรอก แล้ว copy เลย</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={async () => {
-            await fetch("/api/auth/logout", { method: "POST" });
-            router.push("/login");
-          }}
-          className="absolute right-0 flex items-center gap-2 px-3 py-1.5 rounded-lg
-                     text-xs text-slate-500 border border-white/8 bg-white/[0.03]
-                     hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/5
-                     transition-all duration-200"
-        >
-          <LogOut size={13} />
-          ออกจากระบบ
-        </motion.button>
+
+        {/* Right nav */}
+        <div className="absolute right-0 flex items-center gap-2">
+          <motion.button
+            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            onClick={() => router.push("/team")}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
+                       text-slate-500 border border-white/8 bg-white/[0.03]
+                       hover:text-slate-300 hover:border-white/15 transition-all duration-200"
+          >
+            <Users size={12} /> Team
+          </motion.button>
+          {profile?.role === "admin" && (
+            <motion.button
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => router.push("/admin/users")}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
+                         text-slate-500 border border-white/8 bg-white/[0.03]
+                         hover:text-slate-300 hover:border-white/15 transition-all duration-200"
+            >
+              <UserCircle size={12} /> Users
+            </motion.button>
+          )}
+          <motion.button
+            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            onClick={() => router.push("/profile")}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
+                       text-slate-500 border border-white/8 bg-white/[0.03]
+                       hover:text-slate-300 hover:border-white/15 transition-all duration-200"
+          >
+            {profile?.avatar ? (
+              <img src={profile.avatar} className="w-4 h-4 rounded-full object-cover" alt="avatar" />
+            ) : (
+              <UserCircle size={12} />
+            )}
+            {profile?.nickname ?? "Profile"}
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/login");
+            }}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs
+                       text-slate-500 border border-white/8 bg-white/[0.03]
+                       hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/5 transition-all duration-200"
+          >
+            <LogOut size={12} />
+            ออก
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* DB warning */}
@@ -173,32 +222,27 @@ export default function Home() {
                 transition={{ duration: 0.18 }}
                 className="space-y-4"
               >
-                {/* List header */}
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">ประวัติ</span>
                   <div className="flex items-center gap-3">
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                       onClick={handleNew}
                       className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md
                                  bg-violet-600/20 border border-violet-500/40 text-violet-300
                                  hover:bg-violet-600/30 transition-colors"
                     >
-                      <Plus size={12} />
-                      New
+                      <Plus size={12} /> New
                     </motion.button>
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                       onClick={() => setShowStats(true)}
                       className="text-slate-500 hover:text-slate-300 transition-colors"
                     >
                       <BarChart2 size={14} />
                     </motion.button>
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                       onClick={() => setShowSettings(true)}
                       className="text-slate-500 hover:text-slate-300 transition-colors"
                     >
@@ -207,14 +251,16 @@ export default function Home() {
                   </div>
                 </div>
 
-                <HistoryPanel
-                  history={history}
-                  onLoad={handleLoad}
-                  onDelete={handleDelete}
-                  hasMore={hasMore}
-                  loadingMore={loadingMore}
-                  onLoadMore={handleLoadMore}
-                />
+                {historyLoading ? <HistorySkeleton /> : (
+                  <HistoryPanel
+                    history={history}
+                    onLoad={handleLoad}
+                    onDelete={handleDelete}
+                    hasMore={hasMore}
+                    loadingMore={loadingMore}
+                    onLoadMore={handleLoadMore}
+                  />
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -225,24 +271,18 @@ export default function Home() {
                 transition={{ duration: 0.18 }}
                 className="space-y-5"
               >
-                {/* Form header */}
                 <div className="flex items-center justify-between">
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     onClick={() => setMode("list")}
                     className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
                   >
-                    <ArrowLeft size={13} />
-                    ประวัติ
+                    <ArrowLeft size={13} /> ประวัติ
                   </motion.button>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-slate-600">
-                      {entry.id ? "แก้ไข" : "ใหม่"}
-                    </span>
+                    <span className="text-xs text-slate-600">{entry.id ? "แก้ไข" : "ใหม่"}</span>
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                       onClick={() => setShowSettings(true)}
                       className="text-slate-500 hover:text-slate-300 transition-colors"
                     >
@@ -251,7 +291,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Name + Date */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">ชื่อ</label>
@@ -277,49 +316,24 @@ export default function Home() {
 
                 <div className="border-t border-white/8" />
 
-                <TaskSection
-                  label="✅ เมื่อวาน"
-                  tasks={entry.yesterday}
-                  jiraPrefix={settings.jiraPrefix}
-                  onChange={(v) => set("yesterday", v)}
-                />
-
+                <TaskSection label="✅ เมื่อวาน" tasks={entry.yesterday} jiraPrefix={settings.jiraPrefix} onChange={(v) => set("yesterday", v)} />
                 <div className="border-t border-white/8" />
-
-                <TaskSection
-                  label="🎯 วันนี้"
-                  tasks={entry.today}
-                  jiraPrefix={settings.jiraPrefix}
-                  onChange={(v) => set("today", v)}
-                />
-
+                <TaskSection label="🎯 วันนี้" tasks={entry.today} jiraPrefix={settings.jiraPrefix} onChange={(v) => set("today", v)} />
                 <div className="border-t border-white/8" />
 
                 <div className="space-y-3">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">🚧 Blockers</label>
-                    <AutoTextarea
-                      value={entry.blockers}
-                      onChange={(e) => set("blockers", e.target.value)}
-                      placeholder="ไม่มี"
-                      className={textareaClass}
-                    />
+                    <AutoTextarea value={entry.blockers} onChange={(e) => set("blockers", e.target.value)} placeholder="ไม่มี" className={textareaClass} />
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">🙋 ขอความช่วยเหลือ / Review</label>
-                    <AutoTextarea
-                      value={entry.help}
-                      onChange={(e) => set("help", e.target.value)}
-                      placeholder="ไม่มี"
-                      className={textareaClass}
-                    />
+                    <AutoTextarea value={entry.help} onChange={(e) => set("help", e.target.value)} placeholder="ไม่มี" className={textareaClass} />
                   </div>
                 </div>
 
-                {/* Save button */}
                 <motion.button
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
+                  whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                   onClick={handleSave}
                   disabled={saving}
                   className="w-full py-2 rounded-lg bg-violet-600/20 border border-violet-500/40
@@ -346,9 +360,7 @@ export default function Home() {
 
       {/* Stats Modal */}
       <AnimatePresence>
-        {showStats && (
-          <StatsPanel history={history} onClose={() => setShowStats(false)} />
-        )}
+        {showStats && <StatsPanel history={history} onClose={() => setShowStats(false)} />}
       </AnimatePresence>
 
       {/* Toast */}
@@ -373,9 +385,7 @@ export default function Home() {
         {showSettings && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowSettings(false)}
               className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
             />
@@ -389,9 +399,7 @@ export default function Home() {
             >
               <div className="flex items-center justify-between mb-5">
                 <span className="text-sm font-semibold text-slate-200">ตั้งค่า</span>
-                <button onClick={() => setShowSettings(false)} className="text-slate-500 hover:text-slate-300">
-                  <X size={16} />
-                </button>
+                <button onClick={() => setShowSettings(false)} className="text-slate-500 hover:text-slate-300"><X size={16} /></button>
               </div>
               <div className="space-y-4">
                 <div>
@@ -421,14 +429,10 @@ export default function Home() {
                     />
                     <span className="pr-3 text-xs font-mono text-slate-500 select-none">-XX</span>
                   </div>
-                  <p className="text-xs text-slate-600 mt-1.5">
-                    กรอกแค่เลข → ได้ JIRA-{settings.jiraPrefix || "P100"}-XX
-                  </p>
                 </div>
               </div>
               <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
+                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                 onClick={() => {
                   saveSettings(settings);
                   if (settings.defaultName && !entry.name) {

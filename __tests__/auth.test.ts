@@ -41,6 +41,7 @@ const mockPayload = {
   name: "Test User",
   nickname: "tester",
   role: "user" as const,
+  firstLogin: false,
 };
 
 describe("JWT session", () => {

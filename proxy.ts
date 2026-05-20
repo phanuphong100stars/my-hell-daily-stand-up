@@ -3,14 +3,16 @@ import { verifySession, SESSION_COOKIE } from "@/lib/auth";
 
 export async function proxy(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  const isLoginPage = req.nextUrl.pathname === "/login";
+  const { pathname } = req.nextUrl;
+  const isLoginPage = pathname === "/login";
+  const isProfilePage = pathname === "/profile";
 
   const session = token ? await verifySession(token) : null;
 
   if (isLoginPage) {
     if (session) {
       const url = req.nextUrl.clone();
-      url.pathname = "/";
+      url.pathname = session.firstLogin ? "/profile" : "/";
       return NextResponse.redirect(url);
     }
     return NextResponse.next();
@@ -22,9 +24,16 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Force profile completion on first login
+  if (session.firstLogin && !isProfilePage) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/profile";
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!api/auth|_next|favicon.ico).*)"],
+  matcher: ["/((?!api/auth|api/profile|_next|favicon.ico).*)"],
 };

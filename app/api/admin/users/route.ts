@@ -1,0 +1,44 @@
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { verifySession, SESSION_COOKIE } from "@/lib/auth";
+import { listUsers, createUser, findUserByEmail } from "@/lib/users";
+
+async function requireAdmin(req: NextRequest) {
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  const session = token ? await verifySession(token) : null;
+  if (!session || session.role !== "admin") return null;
+  return session;
+}
+
+export async function GET(req: NextRequest) {
+  if (!await requireAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  return NextResponse.json(await listUsers());
+}
+
+export async function POST(req: NextRequest) {
+  if (!await requireAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { email, password, name, nickname, role = "user" } = await req.json();
+  if (!email || !password || !name || !nickname) {
+    return NextResponse.json({ error: "กรุณากรอกข้อมูลให้ครบ" }, { status: 400 });
+  }
+  if (password.length < 6) {
+    return NextResponse.json({ error: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" }, { status: 400 });
+  }
+
+  const existing = await findUserByEmail(email);
+  if (existing) return NextResponse.json({ error: "Email นี้มีอยู่แล้ว" }, { status: 409 });
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  await createUser({
+    id: crypto.randomUUID(),
+    email: email.toLowerCase().trim(),
+    passwordHash,
+    name: name.trim(),
+    nickname: nickname.trim(),
+    role: role === "admin" ? "admin" : "user",
+    firstLogin: true,
+  });
+
+  return NextResponse.json({ ok: true }, { status: 201 });
+}

@@ -20,3 +20,13 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
     return null;
   }
 }
+
+export function sessionCookieOptions(maxAge = 60 * 60 * 24 * 30) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    maxAge,
+    path: "/",
+  };
+}

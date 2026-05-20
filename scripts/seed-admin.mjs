@@ -50,6 +50,7 @@ try {
       name,
       nickname,
       role: "admin",
+      firstLogin: false,
       createdAt: Date.now(),
     });
     console.log(`✅ Admin created: ${email} (${name} / ${nickname})`);
