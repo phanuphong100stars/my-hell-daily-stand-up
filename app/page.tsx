@@ -55,13 +55,22 @@ export default function Home() {
       setProfile(u);
       setEntry((e) => ({ ...e, name: u.nickname ?? e.name }));
       if (shouldShowTour()) setTimeout(() => setShowTour(true), 800);
-      // Sync jiraPrefix from server profile → local settings (server wins)
+
+      const localSettings = loadSettings();
       if (u.jiraPrefix) {
+        // server has prefix → sync to local
         setSettings((s) => {
           const next = { ...s, jiraPrefix: u.jiraPrefix };
           saveSettings(next);
           return next;
         });
+      } else if (localSettings.jiraPrefix && u.name) {
+        // local has prefix but server doesn't → push to server once
+        fetch("/api/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: u.name, nickname: u.nickname, jiraPrefix: localSettings.jiraPrefix }),
+        }).catch(() => {});
       }
     });
 
