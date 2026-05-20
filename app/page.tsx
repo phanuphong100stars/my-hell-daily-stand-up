@@ -218,6 +218,12 @@ export default function Home() {
                 ? <img src={profile.avatar} className="w-4 h-4 rounded-full object-cover" alt="avatar" />
                 : <UserCircle size={12} />}
               {profile?.nickname ?? "Profile"}
+              {profile?.role && profile.role !== "user" && (
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${
+                  profile.role === "superAdmin" ? "border-amber-400/50 text-amber-300 bg-amber-500/10" :
+                  "border-violet-500/40 text-violet-400 bg-violet-500/10"
+                }`}>{profile.role}</span>
+              )}
             </motion.button>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); }}
