@@ -3,15 +3,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { TaskItem } from "@/lib/types";
 import TaskRow from "./TaskRow";
+import { MentionUser } from "./MentionInput";
 
 interface Props {
   label: string;
   tasks: TaskItem[];
   jiraPrefix: string;
   onChange: (tasks: TaskItem[]) => void;
+  mentionUsers: MentionUser[];
 }
 
-export default function TaskSection({ label, tasks, jiraPrefix, onChange }: Props) {
+export default function TaskSection({ label, tasks, jiraPrefix, onChange, mentionUsers }: Props) {
   const add = () => onChange([...tasks, { jira: "", desc: "" }]);
   const update = (i: number, t: TaskItem) => {
     const next = [...tasks];
@@ -35,6 +37,7 @@ export default function TaskSection({ label, tasks, jiraPrefix, onChange }: Prop
               jiraPrefix={jiraPrefix}
               onChange={(nt) => update(i, nt)}
               onRemove={() => remove(i)}
+              mentionUsers={mentionUsers}
             />
           ))}
         </AnimatePresence>

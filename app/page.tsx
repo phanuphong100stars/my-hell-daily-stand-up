@@ -9,8 +9,9 @@ import { AppSettings, loadSettings, saveSettings, DEFAULT_SETTINGS } from "@/lib
 import TaskSection from "@/components/TaskSection";
 import PreviewPanel from "@/components/PreviewPanel";
 import HistoryPanel from "@/components/HistoryPanel";
-import AutoTextarea from "@/components/AutoTextarea";
+import MentionTextarea from "@/components/MentionTextarea";
 import StatsPanel from "@/components/StatsPanel";
+import { MentionUser } from "@/components/MentionInput";
 import StandupDatePicker from "@/components/StandupDatePicker";
 import { HistorySkeleton } from "@/components/Skeleton";
 import { saveStandup, updateStandup, getStandups, deleteStandup } from "@/lib/standup";
@@ -43,6 +44,7 @@ export default function Home() {
   const [toast, setToast] = useState<string | null>(null);
   const [dbOk, setDbOk] = useState(true);
   const [showTour, setShowTour] = useState(false);
+  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
 
   useEffect(() => {
     const s = loadSettings();
@@ -52,6 +54,10 @@ export default function Home() {
       setProfile(u);
       setEntry((e) => ({ ...e, name: u.nickname ?? e.name }));
       if (shouldShowTour()) setTimeout(() => setShowTour(true), 800);
+    });
+
+    fetch("/api/users").then((r) => r.json()).then((u) => {
+      if (Array.isArray(u)) setMentionUsers(u);
     });
 
     getStandups(0).then((rows) => {
@@ -343,19 +349,19 @@ export default function Home() {
 
                 <div className="border-t border-white/8" />
 
-                <TaskSection label="✅ เมื่อวาน" tasks={entry.yesterday} jiraPrefix={settings.jiraPrefix} onChange={(v) => set("yesterday", v)} />
+                <TaskSection label="✅ เมื่อวาน" tasks={entry.yesterday} jiraPrefix={settings.jiraPrefix} onChange={(v) => set("yesterday", v)} mentionUsers={mentionUsers} />
                 <div className="border-t border-white/8" />
-                <TaskSection label="🎯 วันนี้" tasks={entry.today} jiraPrefix={settings.jiraPrefix} onChange={(v) => set("today", v)} />
+                <TaskSection label="🎯 วันนี้" tasks={entry.today} jiraPrefix={settings.jiraPrefix} onChange={(v) => set("today", v)} mentionUsers={mentionUsers} />
                 <div className="border-t border-white/8" />
 
                 <div className="space-y-3">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">🚧 Blockers</label>
-                    <AutoTextarea value={entry.blockers} onChange={(e) => set("blockers", e.target.value)} placeholder="ไม่มี" className={textareaClass} />
+                    <MentionTextarea value={entry.blockers} onValueChange={(v) => set("blockers", v)} users={mentionUsers} placeholder="ไม่มี" className={textareaClass} />
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">🙋 ขอความช่วยเหลือ / Review</label>
-                    <AutoTextarea value={entry.help} onChange={(e) => set("help", e.target.value)} placeholder="ไม่มี" className={textareaClass} />
+                    <MentionTextarea value={entry.help} onValueChange={(v) => set("help", v)} users={mentionUsers} placeholder="ไม่มี" className={textareaClass} />
                   </div>
                 </div>
 
