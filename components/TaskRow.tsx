@@ -24,19 +24,13 @@ export default function TaskRow({ task, jiraPrefix, onChange, onRemove, mentionU
     >
       <div className="flex items-center shrink-0 rounded-lg bg-white/5 border border-white/10
                       focus-within:border-violet-500/60 transition-colors overflow-hidden">
-        {jiraPrefix && (
-          <span className="pl-2.5 pr-1 text-xs font-mono text-slate-500 select-none whitespace-nowrap">
-            JIRA-{jiraPrefix}-
-          </span>
-        )}
         <input
           type="text"
           value={task.jira}
           onChange={(e) => onChange({ ...task, jira: e.target.value })}
-          placeholder={jiraPrefix ? "XX" : "JIRA-P100-XX"}
-          className={`py-2 bg-transparent text-sm font-mono text-slate-200
-                     placeholder:text-slate-600 focus:outline-none
-                     ${jiraPrefix ? "w-14 pr-2" : "w-36 px-3"}`}
+          placeholder={jiraPrefix ? `${jiraPrefix}-XX` : "P100-XX"}
+          className="w-28 px-3 py-2 bg-transparent text-sm font-mono text-slate-300
+                     placeholder:text-slate-600 focus:outline-none"
         />
       </div>
       <MentionInput

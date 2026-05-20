@@ -24,9 +24,13 @@ export function relativeDay(iso: string): "today" | "yesterday" | "tomorrow" | n
 }
 
 export function buildJiraId(suffix: string, prefix: string): string {
-  if (!suffix.trim()) return "";
-  if (!prefix.trim()) return suffix.trim();
-  return `JIRA-${prefix.trim()}-${suffix.trim()}`;
+  const v = suffix.trim();
+  if (!v) return "";
+  // already has a dash → treat as full id (user typed/overrode prefix themselves)
+  if (v.includes("-")) return `JIRA-${v}`;
+  // legacy: just a number/code, combine with prefix
+  if (prefix.trim()) return `JIRA-${prefix.trim()}-${v}`;
+  return v;
 }
 
 function formatTasks(tasks: TaskItem[], jiraPrefix: string): string {
