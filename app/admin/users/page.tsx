@@ -72,6 +72,8 @@ export default function AdminUsersPage() {
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-14 rounded-xl bg-white/[0.03] animate-pulse" />
             ))
+          ) : users.length === 0 ? (
+            <div className="text-center py-16 text-slate-600 text-sm">ยังไม่มีผู้ใช้งาน</div>
           ) : users.map((u) => (
             <div key={u.id} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/8">
               {u.avatar ? (

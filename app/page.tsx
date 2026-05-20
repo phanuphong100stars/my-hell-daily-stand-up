@@ -69,8 +69,7 @@ export default function Home() {
   };
 
   const handleNew = () => {
-    const s = loadSettings();
-    setEntry({ ...EMPTY, date: todayISO(), name: profile?.nickname || s.defaultName || "" });
+    setEntry({ ...EMPTY, date: todayISO(), name: profile?.nickname || "" });
     setMode("form");
   };
 
@@ -131,7 +130,7 @@ export default function Home() {
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="relative max-w-5xl mx-auto mb-8 flex items-center justify-center"
+        className="max-w-5xl mx-auto mb-8 space-y-3"
       >
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight text-white">
@@ -140,8 +139,8 @@ export default function Home() {
           <p className="text-sm text-slate-500 mt-1">กรอก แล้ว copy เลย</p>
         </div>
 
-        {/* Right nav */}
-        <div className="absolute right-0 flex items-center gap-2">
+        {/* Nav row */}
+        <div className="flex items-center justify-end flex-wrap gap-2">
           <motion.button
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => router.push("/team")}
@@ -152,15 +151,26 @@ export default function Home() {
             <Users size={12} /> Team
           </motion.button>
           {profile?.role === "admin" && (
-            <motion.button
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => router.push("/admin/users")}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
-                         text-slate-500 border border-white/8 bg-white/[0.03]
-                         hover:text-slate-300 hover:border-white/15 transition-all duration-200"
-            >
-              <UserCircle size={12} /> Users
-            </motion.button>
+            <>
+              <motion.button
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                onClick={() => router.push("/admin")}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
+                           text-slate-500 border border-white/8 bg-white/[0.03]
+                           hover:text-slate-300 hover:border-white/15 transition-all duration-200"
+              >
+                <BarChart2 size={12} /> Dashboard
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                onClick={() => router.push("/admin/users")}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
+                           text-slate-500 border border-white/8 bg-white/[0.03]
+                           hover:text-slate-300 hover:border-white/15 transition-all duration-200"
+              >
+                <UserCircle size={12} /> Users
+              </motion.button>
+            </>
           )}
           <motion.button
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -403,18 +413,6 @@ export default function Home() {
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">ชื่อ default</label>
-                  <input
-                    type="text"
-                    value={settings.defaultName}
-                    onChange={(e) => setSettings((s) => ({ ...s, defaultName: e.target.value }))}
-                    placeholder="ไมโครเวฟ"
-                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm
-                               text-slate-200 placeholder:text-slate-600 focus:outline-none
-                               focus:border-violet-500/60 transition-colors"
-                  />
-                </div>
-                <div>
                   <label className="block text-xs text-slate-500 mb-1.5">JIRA Prefix</label>
                   <div className="flex items-center rounded-lg bg-white/5 border border-white/10
                                   focus-within:border-violet-500/60 transition-colors overflow-hidden">
@@ -435,9 +433,6 @@ export default function Home() {
                 whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                 onClick={() => {
                   saveSettings(settings);
-                  if (settings.defaultName && !entry.name) {
-                    setEntry((e) => ({ ...e, name: settings.defaultName }));
-                  }
                   setShowSettings(false);
                   showToast("บันทึกการตั้งค่าแล้ว ✓");
                 }}

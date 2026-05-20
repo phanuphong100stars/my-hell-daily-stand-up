@@ -1,13 +1,11 @@
 export interface AppSettings {
   jiraPrefix: string;
-  defaultName: string;
 }
 
 const KEY = "standup_settings";
 
 export const DEFAULT_SETTINGS: AppSettings = {
   jiraPrefix: "P100",
-  defaultName: "",
 };
 
 export function loadSettings(): AppSettings {

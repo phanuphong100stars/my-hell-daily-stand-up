@@ -9,7 +9,7 @@ import "react-day-picker/style.css";
 interface Props {
   value: string;
   onChange: (iso: string) => void;
-  standupDates: Set<string>;
+  standupDates?: Set<string>;
 }
 
 function toDate(iso: string) {
@@ -23,7 +23,7 @@ function toISO(d: Date) {
   return `${y}-${m}-${day}`;
 }
 
-export default function StandupDatePicker({ value, onChange, standupDates }: Props) {
+export default function StandupDatePicker({ value, onChange, standupDates = new Set() }: Props) {
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(() => toDate(value));
   const ref = useRef<HTMLDivElement>(null);

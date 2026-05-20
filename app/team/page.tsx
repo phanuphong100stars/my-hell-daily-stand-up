@@ -2,10 +2,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { TeamSkeleton } from "@/components/Skeleton";
 import { StandupEntry } from "@/lib/types";
-import { buildText } from "@/lib/format";
+import { buildText, formatDate } from "@/lib/format";
+import StandupDatePicker from "@/components/StandupDatePicker";
 
 interface TeamEntry extends StandupEntry {
   user?: { id: string; name: string; nickname: string; avatar?: string } | null;
@@ -38,14 +39,8 @@ export default function TeamPage() {
             <ArrowLeft size={13} /> กลับ
           </button>
           <h1 className="text-sm font-semibold text-white">Team Daily</h1>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">
-            <Calendar size={12} />
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-transparent text-slate-400 focus:outline-none focus:text-slate-200"
-            />
+          <div className="w-40">
+            <StandupDatePicker value={date} onChange={setDate} />
           </div>
         </div>
 
@@ -54,7 +49,7 @@ export default function TeamPage() {
         ) : (
           Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([d, items]) => (
             <div key={d}>
-              <p className="text-xs text-slate-600 mb-2 font-mono">{d}</p>
+              <p className="text-xs text-slate-600 mb-2">{formatDate(d)}</p>
               <div className="space-y-3">
                 {items.map((entry) => (
                   <motion.div
