@@ -13,3 +13,22 @@ export interface StandupEntry {
   help: string;
   createdAt?: number;
 }
+
+export interface User {
+  id: string;
+  email: string;
+  passwordHash: string;
+  name: string;
+  nickname: string;
+  avatar?: string;
+  role: "admin" | "user";
+  createdAt: number;
+}
+
+export interface SessionPayload {
+  sub: string;
+  email: string;
+  name: string;
+  nickname: string;
+  role: "admin" | "user";
+}

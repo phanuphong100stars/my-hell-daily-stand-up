@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
-import { SESSION_COOKIE } from "@/lib/auth";
-
-const secret = new TextEncoder().encode(process.env.SESSION_SECRET!);
-
-async function isAuthenticated(req: NextRequest): Promise<boolean> {
-  const token = req.cookies.get(SESSION_COOKIE)?.value;
-  if (!token) return false;
-  try {
-    await jwtVerify(token, secret);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { verifySession, SESSION_COOKIE } from "@/lib/auth";
 
 export async function middleware(req: NextRequest) {
-  const authenticated = await isAuthenticated(req);
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
   const isLoginPage = req.nextUrl.pathname === "/login";
 
+  const session = token ? await verifySession(token) : null;
+
   if (isLoginPage) {
-    if (authenticated) {
+    if (session) {
       const url = req.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);
@@ -28,7 +16,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!authenticated) {
+  if (!session) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

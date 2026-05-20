@@ -35,15 +35,25 @@ describe("bcrypt password comparison", () => {
   });
 });
 
+const mockPayload = {
+  sub: "user-123",
+  email: "test@example.com",
+  name: "Test User",
+  nickname: "tester",
+  role: "user" as const,
+};
+
 describe("JWT session", () => {
-  it("sign and verify returns true", async () => {
+  it("sign and verify returns payload", async () => {
     const { signSession, verifySession } = await import("@/lib/auth");
-    const token = await signSession();
-    expect(await verifySession(token)).toBe(true);
+    const token = await signSession(mockPayload);
+    const result = await verifySession(token);
+    expect(result?.sub).toBe("user-123");
+    expect(result?.email).toBe("test@example.com");
   });
 
-  it("tampered token returns false", async () => {
+  it("tampered token returns null", async () => {
     const { verifySession } = await import("@/lib/auth");
-    expect(await verifySession("invalid.token.here")).toBe(false);
+    expect(await verifySession("invalid.token.here")).toBeNull();
   });
 });

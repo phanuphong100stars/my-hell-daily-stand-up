@@ -1,31 +1,16 @@
-import { MongoClient, Collection } from "mongodb";
-import { attachDatabasePool } from "@vercel/functions";
+import { Collection } from "mongodb";
+import { getDb } from "./mongo";
 import { StandupEntry } from "./types";
 
-const uri = process.env.MONGODB_URI!;
-
-declare global {
-  var _mongoClientPromise: Promise<MongoClient> | undefined;
-}
-
-let clientPromise: Promise<MongoClient>;
-
-if (!global._mongoClientPromise) {
-  const client = new MongoClient(uri);
-  attachDatabasePool(client);
-  global._mongoClientPromise = client.connect();
-}
-clientPromise = global._mongoClientPromise;
-
-async function getCollection(): Promise<Collection> {
-  const client = await clientPromise;
-  return client.db("standup").collection("standups");
+async function col(): Promise<Collection> {
+  const db = await getDb();
+  return db.collection("standups");
 }
 
 export async function dbInsert(entry: StandupEntry): Promise<string> {
-  const col = await getCollection();
+  const c = await col();
   const id = crypto.randomUUID();
-  await col.insertOne({
+  await c.insertOne({
     id,
     name: entry.name,
     date: entry.date,
@@ -39,8 +24,8 @@ export async function dbInsert(entry: StandupEntry): Promise<string> {
 }
 
 export async function dbList(limit = 20, offset = 0): Promise<StandupEntry[]> {
-  const col = await getCollection();
-  const docs = await col
+  const c = await col();
+  const docs = await c
     .find({})
     .sort({ date: -1, createdAt: -1 })
     .skip(offset)
@@ -59,8 +44,8 @@ export async function dbList(limit = 20, offset = 0): Promise<StandupEntry[]> {
 }
 
 export async function dbUpdate(entry: StandupEntry): Promise<void> {
-  const col = await getCollection();
-  await col.updateOne(
+  const c = await col();
+  await c.updateOne(
     { id: entry.id },
     {
       $set: {
@@ -76,6 +61,6 @@ export async function dbUpdate(entry: StandupEntry): Promise<void> {
 }
 
 export async function dbDelete(id: string): Promise<void> {
-  const col = await getCollection();
-  await col.deleteOne({ id });
+  const c = await col();
+  await c.deleteOne({ id });
 }

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed": "node scripts/seed-admin.mjs"
   },
   "dependencies": {
     "@vercel/functions": "^3.6.0",

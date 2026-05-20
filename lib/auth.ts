@@ -1,23 +1,22 @@
 import { SignJWT, jwtVerify } from "jose";
+import { SessionPayload } from "./types";
 
-const SESSION_COOKIE = "session";
+export const SESSION_COOKIE = "session";
 const secret = new TextEncoder().encode(process.env.SESSION_SECRET!);
 
-export async function signSession(): Promise<string> {
-  return new SignJWT({})
+export async function signSession(payload: SessionPayload): Promise<string> {
+  return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("30d")
     .sign(secret);
 }
 
-export async function verifySession(token: string): Promise<boolean> {
+export async function verifySession(token: string): Promise<SessionPayload | null> {
   try {
-    await jwtVerify(token, secret);
-    return true;
+    const { payload } = await jwtVerify(token, secret);
+    return payload as unknown as SessionPayload;
   } catch {
-    return false;
+    return null;
   }
 }
-
-export { SESSION_COOKIE };
