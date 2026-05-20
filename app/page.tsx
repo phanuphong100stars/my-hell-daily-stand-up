@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus, Settings, X, BarChart2, LogOut, Users, UserCircle } from "lucide-react";
+import { ArrowLeft, Plus, Settings, X, BarChart2, LogOut, Users, UserCircle, HelpCircle } from "lucide-react";
+import Tour, { TourStep, shouldShowTour } from "@/components/Tour";
 import { StandupEntry } from "@/lib/types";
 import { todayISO } from "@/lib/format";
 import { AppSettings, loadSettings, saveSettings, DEFAULT_SETTINGS } from "@/lib/settings";
@@ -41,15 +42,16 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [dbOk, setDbOk] = useState(true);
+  const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
     const s = loadSettings();
     setSettings(s);
 
-    // Load profile and use nickname as default name
     fetch("/api/profile").then((r) => r.json()).then((u) => {
       setProfile(u);
       setEntry((e) => ({ ...e, name: u.nickname ?? e.name }));
+      if (shouldShowTour()) setTimeout(() => setShowTour(true), 800);
     });
 
     getStandups(0).then((rows) => {
@@ -142,6 +144,7 @@ export default function Home() {
         {/* Nav row */}
         <div className="flex items-center justify-end flex-wrap gap-2">
           <motion.button
+            id="nav-team"
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => router.push("/team")}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
@@ -153,6 +156,7 @@ export default function Home() {
           {profile?.role === "admin" && (
             <>
               <motion.button
+                id="nav-dashboard"
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 onClick={() => router.push("/admin")}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
@@ -162,6 +166,7 @@ export default function Home() {
                 <BarChart2 size={12} /> Dashboard
               </motion.button>
               <motion.button
+                id="nav-users"
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 onClick={() => router.push("/admin/users")}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
@@ -173,6 +178,7 @@ export default function Home() {
             </>
           )}
           <motion.button
+            id="nav-profile"
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => router.push("/profile")}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
@@ -198,6 +204,14 @@ export default function Home() {
           >
             <LogOut size={12} />
             ออก
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+            onClick={() => setShowTour(true)}
+            className="text-slate-600 hover:text-slate-400 transition-colors p-1"
+            title="แนะนำการใช้งาน"
+          >
+            <HelpCircle size={14} />
           </motion.button>
         </div>
       </motion.div>
@@ -236,7 +250,8 @@ export default function Home() {
                   <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">ประวัติ</span>
                   <div className="flex items-center gap-3">
                     <motion.button
-                      whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                      id="btn-new"
+                      whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}
                       onClick={handleNew}
                       className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md
                                  bg-violet-600/20 border border-violet-500/40 text-violet-300
@@ -245,14 +260,16 @@ export default function Home() {
                       <Plus size={12} /> New
                     </motion.button>
                     <motion.button
-                      whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                      id="btn-stats"
+                      whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                       onClick={() => setShowStats(true)}
                       className="text-slate-500 hover:text-slate-300 transition-colors"
                     >
                       <BarChart2 size={14} />
                     </motion.button>
                     <motion.button
-                      whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                      id="btn-settings"
+                      whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                       onClick={() => setShowSettings(true)}
                       className="text-slate-500 hover:text-slate-300 transition-colors"
                     >
@@ -389,6 +406,23 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Tour */}
+      {showTour && (() => {
+        const baseSteps: TourStep[] = [
+          { target: "btn-new", title: "สร้าง Standup ใหม่", desc: "กดเพื่อเริ่มกรอก daily standup ของวันนี้ใส่ task เมื่อวาน วันนี้ และ blockers" },
+          { target: "btn-stats", title: "สถิติส่วนตัว", desc: "ดู streak ความสม่ำเสมอ JIRA tickets ที่ทำไปทั้งหมด และ consistency เดือนนี้" },
+          { target: "btn-settings", title: "ตั้งค่า JIRA Prefix", desc: "กำหนด prefix เช่น P100 แล้วระบบจะสร้าง JIRA-P100-XX ให้อัตโนมัติ" },
+          { target: "nav-team", title: "Team Daily", desc: "ดู standup ของเพื่อนร่วมทีมทุกคน และเช็คว่าใครยังไม่ได้ส่งวันนี้" },
+          { target: "nav-profile", title: "โปรไฟล์", desc: "แก้ไขชื่อเล่น รูปโปรไฟล์ ชื่อของคุณจะแสดงใน standup ทุกครั้งที่สร้างใหม่" },
+        ];
+        const adminSteps: TourStep[] = [
+          { target: "nav-dashboard", title: "Admin Dashboard", desc: "ดูภาพรวมทีมวันนี้ ใครส่งแล้ว ใครยังไม่ส่ง attendance 7 วัน และ ranking" },
+          { target: "nav-users", title: "จัดการผู้ใช้", desc: "เพิ่มผู้ใช้ใหม่ และรีเซ็ตรหัสผ่านได้ที่นี่ (admin ไม่สามารถรีเซ็ตกันเองได้)" },
+        ];
+        const steps = profile?.role === "admin" ? [...baseSteps, ...adminSteps] : baseSteps;
+        return <Tour steps={steps} onDone={() => setShowTour(false)} />;
+      })()}
 
       {/* Settings Modal */}
       <AnimatePresence>

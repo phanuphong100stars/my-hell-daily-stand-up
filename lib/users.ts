@@ -48,3 +48,8 @@ export async function updateUser(id: string, patch: Partial<Pick<User, "name" | 
   const updated = await c.findOne({ id });
   return updated ? toPublic(updated as User) : null;
 }
+
+export async function updateUserPassword(id: string, passwordHash: string): Promise<void> {
+  const c = await col();
+  await c.updateOne({ id }, { $set: { passwordHash } });
+}

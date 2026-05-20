@@ -14,59 +14,70 @@ export async function GET(req: NextRequest) {
 
   const db = await getDb();
   const standups = db.collection("standups");
-  const users = db.collection("users");
+  const usersCol = db.collection("users");
 
-  // Last 70 days for heatmap
-  const since = new Date();
-  since.setDate(since.getDate() - 69);
-  const sinceISO = since.toISOString().split("T")[0];
+  const todayISO = new Date().toISOString().split("T")[0];
 
-  const [allStandups, allUsers] = await Promise.all([
-    standups.find({}).sort({ date: -1 }).toArray(),
-    users.find({}).toArray(),
-  ]);
-
-  // Standups per user (bar chart)
-  const perUser: Record<string, { name: string; nickname: string; count: number }> = {};
-  for (const u of allUsers) {
-    perUser[u.id] = { name: u.name, nickname: u.nickname, count: 0 };
-  }
-  for (const s of allStandups) {
-    if (s.userId && perUser[s.userId]) perUser[s.userId].count++;
-  }
-  const byUser = Object.values(perUser).sort((a, b) => b.count - a.count);
-
-  // Standups per date (last 70 days for heatmap + last 30 days bar)
-  const byDate: Record<string, number> = {};
-  for (const s of allStandups) {
-    if (s.date >= sinceISO) byDate[s.date] = (byDate[s.date] ?? 0) + 1;
-  }
-
-  // Last 30 days trend (area chart)
-  const trend30: { date: string; count: number }[] = [];
-  for (let i = 29; i >= 0; i--) {
+  // last 7 days ISO strings (oldest → newest)
+  const last7: string[] = [];
+  for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const iso = d.toISOString().split("T")[0];
-    trend30.push({ date: iso, count: byDate[iso] ?? 0 });
+    last7.push(d.toISOString().split("T")[0]);
   }
 
-  // Role distribution (pie chart)
-  const roleCounts = allUsers.reduce<Record<string, number>>((acc, u) => {
-    acc[u.role] = (acc[u.role] ?? 0) + 1;
-    return acc;
-  }, {});
-  const byRole = Object.entries(roleCounts).map(([role, count]) => ({ role, count }));
+  const since = last7[0];
 
-  // Heatmap: last 70 days
-  const heatmap = Object.entries(byDate).map(([date, count]) => ({ date, count }));
+  const [allUsers, recentStandups, todayStandups] = await Promise.all([
+    usersCol.find({}).sort({ createdAt: 1 }).toArray(),
+    standups.find({ date: { $gte: since } }).toArray(),
+    standups.find({ date: todayISO }).toArray(),
+  ]);
 
-  // Summary stats
-  const totalStandups = allStandups.length;
+  const submittedTodayIds = new Set(todayStandups.map((s) => s.userId).filter(Boolean));
+
+  const todaySubmitted = allUsers
+    .filter((u) => submittedTodayIds.has(u.id))
+    .map((u) => ({ id: u.id, nickname: u.nickname, name: u.name, avatar: u.avatar }));
+
+  const todayMissing = allUsers
+    .filter((u) => !submittedTodayIds.has(u.id))
+    .map((u) => ({ id: u.id, nickname: u.nickname, name: u.name, avatar: u.avatar }));
+
+  // 7-day attendance grid per user
+  const attendanceGrid = allUsers.map((u) => ({
+    id: u.id,
+    nickname: u.nickname,
+    name: u.name,
+    avatar: u.avatar,
+    days: last7.map((d) => recentStandups.some((s) => s.userId === u.id && s.date === d)),
+  }));
+
+  // all-time count per user for ranking
+  const allTimeCounts = await standups.aggregate([
+    { $match: { userId: { $exists: true, $ne: null } } },
+    { $group: { _id: "$userId", count: { $sum: 1 } } },
+  ]).toArray();
+  const countMap = new Map(allTimeCounts.map((c) => [c._id as string, c.count as number]));
+  const top3 = allUsers
+    .map((u) => ({ id: u.id, nickname: u.nickname, name: u.name, avatar: u.avatar, count: countMap.get(u.id) ?? 0 }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
+    .filter((u) => u.count > 0);
+
   const totalUsers = allUsers.length;
-  const todayISO = new Date().toISOString().split("T")[0];
-  const todayCount = byDate[todayISO] ?? 0;
-  const last7 = trend30.slice(-7).reduce((s, d) => s + d.count, 0);
+  const totalStandups = await standups.countDocuments();
+  const last7Total = recentStandups.length;
 
-  return NextResponse.json({ byUser, trend30, byRole, heatmap, totalStandups, totalUsers, todayCount, last7 });
+  return NextResponse.json({
+    todayISO,
+    last7,
+    todaySubmitted,
+    todayMissing,
+    attendanceGrid,
+    top3,
+    totalUsers,
+    totalStandups,
+    last7Total,
+  });
 }

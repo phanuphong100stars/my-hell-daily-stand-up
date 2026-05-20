@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock } from "lucide-react";
 import { TeamSkeleton } from "@/components/Skeleton";
-import { StandupEntry } from "@/lib/types";
+import { StandupEntry, PublicUser } from "@/lib/types";
 import { buildText, formatDate } from "@/lib/format";
 import StandupDatePicker from "@/components/StandupDatePicker";
 
@@ -15,6 +15,7 @@ interface TeamEntry extends StandupEntry {
 export default function TeamPage() {
   const router = useRouter();
   const [entries, setEntries] = useState<TeamEntry[]>([]);
+  const [missing, setMissing] = useState<PublicUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
 
@@ -22,14 +23,12 @@ export default function TeamPage() {
     setLoading(true);
     fetch(`/api/team?date=${date}`)
       .then((r) => r.json())
-      .then((d) => { setEntries(d); setLoading(false); });
+      .then((d) => {
+        setEntries(d.entries ?? []);
+        setMissing(d.missing ?? []);
+        setLoading(false);
+      });
   }, [date]);
-
-  const grouped = entries.reduce<Record<string, TeamEntry[]>>((acc, e) => {
-    const key = e.date;
-    acc[key] = [...(acc[key] ?? []), e];
-    return acc;
-  }, {});
 
   return (
     <main className="min-h-screen px-4 py-8">
@@ -39,19 +38,74 @@ export default function TeamPage() {
             <ArrowLeft size={13} /> กลับ
           </button>
           <h1 className="text-sm font-semibold text-white">Team Daily</h1>
-          <div className="w-40">
+          <div className="w-36">
             <StandupDatePicker value={date} onChange={setDate} />
           </div>
         </div>
 
-        {loading ? <TeamSkeleton /> : entries.length === 0 ? (
-          <div className="text-center py-16 text-slate-600 text-sm">ไม่มีข้อมูลวันที่เลือก</div>
-        ) : (
-          Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([d, items]) => (
-            <div key={d}>
-              <p className="text-xs text-slate-600 mb-2">{formatDate(d)}</p>
+        {loading ? <TeamSkeleton /> : (
+          <>
+            {/* Status summary */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+                <div className="flex items-center gap-1.5 text-[10px] text-emerald-500 font-semibold uppercase tracking-wider mb-2">
+                  <CheckCircle2 size={10} /> ส่งแล้ว ({entries.length})
+                </div>
+                {entries.length === 0 ? (
+                  <p className="text-xs text-slate-600">—</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {entries.map((e) => {
+                      const nick = e.user?.nickname ?? e.name;
+                      const av = e.user?.avatar;
+                      return (
+                        <div key={e.id} className="flex items-center gap-1.5" title={nick}>
+                          {av ? (
+                            <img src={av} alt={nick} className="w-6 h-6 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-300 text-[10px] font-bold">
+                              {nick[0]?.toUpperCase()}
+                            </div>
+                          )}
+                          <span className="text-xs text-slate-300">{nick}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                <div className="flex items-center gap-1.5 text-[10px] text-amber-500 font-semibold uppercase tracking-wider mb-2">
+                  <Clock size={10} /> ยังไม่ส่ง ({missing.length})
+                </div>
+                {missing.length === 0 ? (
+                  <p className="text-xs text-slate-600">—</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {missing.map((u) => (
+                      <div key={u.id} className="flex items-center gap-1.5" title={u.nickname}>
+                        {u.avatar ? (
+                          <img src={u.avatar} alt={u.nickname} className="w-6 h-6 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 text-[10px] font-bold">
+                            {u.nickname[0]?.toUpperCase()}
+                          </div>
+                        )}
+                        <span className="text-xs text-slate-500">{u.nickname}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Standup entries */}
+            {entries.length === 0 ? (
+              <div className="text-center py-12 text-slate-600 text-sm">ไม่มีข้อมูลวันที่เลือก</div>
+            ) : (
               <div className="space-y-3">
-                {items.map((entry) => (
+                {entries.map((entry) => (
                   <motion.div
                     key={entry.id}
                     initial={{ opacity: 0, y: 8 }}
@@ -77,8 +131,8 @@ export default function TeamPage() {
                   </motion.div>
                 ))}
               </div>
-            </div>
-          ))
+            )}
+          </>
         )}
       </div>
     </main>

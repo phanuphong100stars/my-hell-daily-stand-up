@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const users = await listUsers();
   const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
 
-  return NextResponse.json(standups.map((s) => ({
+  const entries = standups.map((s) => ({
     id: s.id,
     userId: s.userId,
     name: s.name,
@@ -33,5 +33,12 @@ export async function GET(req: NextRequest) {
     help: s.help,
     createdAt: s.createdAt,
     user: s.userId ? userMap[s.userId] ?? null : null,
-  })));
+  }));
+
+  // users who haven't submitted for the filtered date
+  const missing = date
+    ? users.filter((u) => !standups.some((s) => s.userId === u.id))
+    : [];
+
+  return NextResponse.json({ entries, missing });
 }

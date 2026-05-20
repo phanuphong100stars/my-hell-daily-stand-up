@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { verifySession, SESSION_COOKIE } from "@/lib/auth";
-import { listUsers, createUser, findUserByEmail } from "@/lib/users";
+import { listUsers, createUser, findUserByEmail, findUserById, updateUserPassword } from "@/lib/users";
 
 async function requireAdmin(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
@@ -41,4 +41,20 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ ok: true }, { status: 201 });
+}
+
+export async function PATCH(req: NextRequest) {
+  if (!await requireAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { id, newPassword } = await req.json();
+  if (!id || !newPassword) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  if (newPassword.length < 6) return NextResponse.json({ error: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" }, { status: 400 });
+
+  const target = await findUserById(id);
+  if (!target) return NextResponse.json({ error: "ไม่พบผู้ใช้" }, { status: 404 });
+  if (target.role === "admin") return NextResponse.json({ error: "ไม่สามารถรีเซ็ตรหัสผ่าน admin ได้" }, { status: 403 });
+
+  const hash = await bcrypt.hash(newPassword.trim(), 12);
+  await updateUserPassword(id, hash);
+  return NextResponse.json({ ok: true });
 }

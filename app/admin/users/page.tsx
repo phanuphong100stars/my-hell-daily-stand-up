@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus, X, UserCircle } from "lucide-react";
+import { ArrowLeft, Plus, X, UserCircle, KeyRound, AlertTriangle } from "lucide-react";
 import { PublicUser } from "@/lib/types";
 
 export default function AdminUsersPage() {
@@ -13,6 +13,12 @@ export default function AdminUsersPage() {
   const [form, setForm] = useState({ email: "", password: "", name: "", nickname: "", role: "user" });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Reset password state
+  const [resetTarget, setResetTarget] = useState<PublicUser | null>(null);
+  const [resetPw, setResetPw] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetSaving, setResetSaving] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/users")
@@ -42,6 +48,26 @@ export default function AdminUsersPage() {
       setError(d.error);
     }
     setSaving(false);
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetTarget) return;
+    setResetSaving(true);
+    setResetError("");
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: resetTarget.id, newPassword: resetPw }),
+    });
+    if (res.ok) {
+      setResetTarget(null);
+      setResetPw("");
+    } else {
+      const d = await res.json();
+      setResetError(d.error);
+    }
+    setResetSaving(false);
   };
 
   const inputClass =
@@ -74,8 +100,14 @@ export default function AdminUsersPage() {
             ))
           ) : users.length === 0 ? (
             <div className="text-center py-16 text-slate-600 text-sm">ยังไม่มีผู้ใช้งาน</div>
-          ) : users.map((u) => (
-            <div key={u.id} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/8">
+          ) : users.map((u, i) => (
+            <motion.div
+              key={u.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04 }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/8"
+            >
               {u.avatar ? (
                 <img src={u.avatar} alt={u.nickname} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
               ) : (
@@ -84,7 +116,9 @@ export default function AdminUsersPage() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-200 font-medium truncate">{u.nickname} <span className="text-slate-500 font-normal">({u.name})</span></p>
+                <p className="text-sm text-slate-200 font-medium truncate">
+                  {u.nickname} <span className="text-slate-500 font-normal">({u.name})</span>
+                </p>
                 <p className="text-xs text-slate-600 truncate">{u.email}</p>
               </div>
               <span className={`text-xs px-2 py-0.5 rounded-full border ${u.role === "admin" ? "border-violet-500/40 text-violet-400 bg-violet-500/10" : "border-white/10 text-slate-500"}`}>
@@ -93,7 +127,17 @@ export default function AdminUsersPage() {
               {u.firstLogin && (
                 <span className="text-xs text-amber-500/80">ยังไม่ได้ login</span>
               )}
-            </div>
+              {u.role !== "admin" && (
+                <motion.button
+                  whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                  onClick={() => { setResetTarget(u); setResetPw(""); setResetError(""); }}
+                  className="p-1.5 rounded-lg text-slate-600 hover:text-amber-400 hover:bg-amber-500/10 transition-all"
+                  title="รีเซ็ตรหัสผ่าน"
+                >
+                  <KeyRound size={13} />
+                </motion.button>
+              )}
+            </motion.div>
           ))}
         </div>
 
@@ -149,6 +193,71 @@ export default function AdminUsersPage() {
                                text-violet-300 text-sm font-semibold hover:bg-violet-600/30 transition-colors disabled:opacity-50">
                     {saving ? "กำลังสร้าง..." : "สร้างผู้ใช้"}
                   </button>
+                </form>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Reset password confirm modal */}
+        <AnimatePresence>
+          {resetTarget && (
+            <>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setResetTarget(null)}
+                className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                transition={{ duration: 0.18 }}
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
+                           w-full max-w-sm bg-[#13151f] border border-white/10 rounded-2xl p-6 shadow-2xl"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-semibold text-white flex items-center gap-2">
+                    <KeyRound size={14} className="text-amber-400" /> รีเซ็ตรหัสผ่าน
+                  </span>
+                  <button onClick={() => setResetTarget(null)} className="text-slate-500 hover:text-slate-300"><X size={15} /></button>
+                </div>
+
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/8 border border-amber-500/20 mb-4">
+                  <AlertTriangle size={13} className="text-amber-400 flex-shrink-0" />
+                  <p className="text-xs text-amber-300/80">
+                    รีเซ็ตรหัสผ่านสำหรับ <span className="font-semibold">{resetTarget.nickname}</span> ({resetTarget.email})
+                  </p>
+                </div>
+
+                <form onSubmit={handleReset} className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1.5">รหัสผ่านใหม่</label>
+                    <input
+                      type="password"
+                      value={resetPw}
+                      onChange={(e) => setResetPw(e.target.value)}
+                      placeholder="อย่างน้อย 6 ตัวอักษร"
+                      autoFocus
+                      className={inputClass}
+                    />
+                  </div>
+                  {resetError && <p className="text-xs text-red-400">{resetError}</p>}
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setResetTarget(null)}
+                      className="flex-1 py-2 rounded-lg border border-white/10 text-slate-400 text-sm hover:bg-white/5 transition-colors"
+                    >
+                      ยกเลิก
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={resetSaving || resetPw.length < 6}
+                      className="flex-1 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40
+                                 text-amber-300 text-sm font-semibold hover:bg-amber-500/30 transition-colors disabled:opacity-50"
+                    >
+                      {resetSaving ? "กำลังรีเซ็ต..." : "ยืนยันรีเซ็ต"}
+                    </button>
+                  </div>
                 </form>
               </motion.div>
             </>
