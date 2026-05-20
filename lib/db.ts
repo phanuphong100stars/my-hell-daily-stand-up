@@ -12,6 +12,7 @@ export async function dbInsert(entry: StandupEntry): Promise<string> {
   const id = crypto.randomUUID();
   await c.insertOne({
     id,
+    userId: entry.userId,
     name: entry.name,
     date: entry.date,
     yesterday: entry.yesterday,
