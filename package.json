@@ -12,7 +12,6 @@
     "seed": "node scripts/seed-admin.mjs"
   },
   "dependencies": {
-    "@vercel/functions": "^3.6.0",
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.39.0",
     "jose": "^6.2.3",
