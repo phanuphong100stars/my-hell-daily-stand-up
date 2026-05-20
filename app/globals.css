@@ -1,26 +1,97 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #0c0e18;
+  --foreground: #e8eaf6;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Subtle grid background */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(108, 99, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(108, 99, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
+  cursor: pointer;
+}
+
+/* react-day-picker dark theme */
+.standup-picker {
+  --rdp-accent-color: #7c3aed;
+  --rdp-accent-color-dark: #6d28d9;
+  --rdp-background-color: rgba(255,255,255,0.06);
+  --rdp-background-color-dark: rgba(255,255,255,0.06);
+  --rdp-selected-border: none;
+  color: #cbd5e1;
+  font-size: 0.8125rem;
+}
+.standup-picker .rdp-month_caption {
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.standup-picker .rdp-weekday {
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+.standup-picker .rdp-day_button {
+  color: #94a3b8;
+  border-radius: 0.5rem;
+  width: 34px;
+  height: 34px;
+  font-size: 0.8rem;
+}
+.standup-picker .rdp-day_button:hover {
+  background: rgba(255,255,255,0.06);
+  color: #e2e8f0;
+}
+.standup-picker .rdp-selected .rdp-day_button {
+  background: #7c3aed;
+  color: #fff;
+  font-weight: 600;
+}
+.standup-picker .rdp-today .rdp-day_button {
+  color: #a78bfa;
+  font-weight: 700;
+}
+.standup-picker .rdp-outside .rdp-day_button {
+  color: #334155;
+}
+
+/* standup indicator dot */
+.standup-picker .rdp-standup .rdp-day_button::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #7c3aed;
+  opacity: 0.8;
+}
+.standup-picker .rdp-day_button {
+  position: relative;
 }
