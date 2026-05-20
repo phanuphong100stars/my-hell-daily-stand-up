@@ -4,8 +4,9 @@ import { signSession, SESSION_COOKIE } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   const { password } = await req.json();
-  const hash = process.env.ADMIN_PASSWORD_HASH;
-  if (!hash || !password || !(await bcrypt.compare(password, hash))) {
+  const hash = process.env.ADMIN_PASSWORD_HASH?.trim();
+
+  if (!hash || !password || !(await bcrypt.compare(String(password).trim(), hash))) {
     return NextResponse.json({ error: "รหัสผ่านไม่ถูกต้อง" }, { status: 401 });
   }
   const token = await signSession();
