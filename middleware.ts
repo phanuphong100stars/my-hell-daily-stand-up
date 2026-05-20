@@ -4,19 +4,39 @@ import { SESSION_COOKIE } from "@/lib/auth";
 
 const secret = new TextEncoder().encode(process.env.SESSION_SECRET!);
 
-export async function middleware(req: NextRequest) {
+async function isAuthenticated(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  if (token) {
-    try {
-      await jwtVerify(token, secret);
-      return NextResponse.next();
-    } catch {}
+  if (!token) return false;
+  try {
+    await jwtVerify(token, secret);
+    return true;
+  } catch {
+    return false;
   }
-  const url = req.nextUrl.clone();
-  url.pathname = "/login";
-  return NextResponse.redirect(url);
+}
+
+export async function middleware(req: NextRequest) {
+  const authenticated = await isAuthenticated(req);
+  const isLoginPage = req.nextUrl.pathname === "/login";
+
+  if (isLoginPage) {
+    if (authenticated) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
+  if (!authenticated) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!login|api/auth|_next|favicon.ico).*)"],
+  matcher: ["/((?!api/auth|_next|favicon.ico).*)"],
 };
