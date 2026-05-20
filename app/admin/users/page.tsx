@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus, X, UserCircle, KeyRound, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Plus, X, UserCircle, KeyRound, AlertTriangle, Trash2 } from "lucide-react";
 import { PublicUser } from "@/lib/types";
 
 export default function AdminUsersPage() {
@@ -19,6 +19,11 @@ export default function AdminUsersPage() {
   const [resetPw, setResetPw] = useState("");
   const [resetError, setResetError] = useState("");
   const [resetSaving, setResetSaving] = useState(false);
+
+  // Delete state
+  const [deleteTarget, setDeleteTarget] = useState<PublicUser | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteSaving, setDeleteSaving] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/users")
@@ -48,6 +53,25 @@ export default function AdminUsersPage() {
       setError(d.error);
     }
     setSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteSaving(true);
+    setDeleteError("");
+    const res = await fetch("/api/admin/users", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: deleteTarget.id }),
+    });
+    if (res.ok) {
+      setUsers((u) => u.filter((x) => x.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } else {
+      const d = await res.json();
+      setDeleteError(d.error);
+    }
+    setDeleteSaving(false);
   };
 
   const handleReset = async (e: React.FormEvent) => {
@@ -131,14 +155,24 @@ export default function AdminUsersPage() {
                 <span className="text-xs text-amber-500/80">ยังไม่ได้ login</span>
               )}
               {u.role !== "admin" && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                  onClick={() => { setResetTarget(u); setResetPw(""); setResetError(""); }}
-                  className="p-1.5 rounded-lg text-slate-600 hover:text-amber-400 hover:bg-amber-500/10 transition-all"
-                  title="รีเซ็ตรหัสผ่าน"
-                >
-                  <KeyRound size={13} />
-                </motion.button>
+                <>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                    onClick={() => { setResetTarget(u); setResetPw(""); setResetError(""); }}
+                    className="p-1.5 rounded-lg text-slate-600 hover:text-amber-400 hover:bg-amber-500/10 transition-all"
+                    title="รีเซ็ตรหัสผ่าน"
+                  >
+                    <KeyRound size={13} />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                    onClick={() => { setDeleteTarget(u); setDeleteError(""); }}
+                    className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                    title="ลบผู้ใช้"
+                  >
+                    <Trash2 size={13} />
+                  </motion.button>
+                </>
               )}
             </motion.div>
           ))}
@@ -214,6 +248,56 @@ export default function AdminUsersPage() {
                     {saving ? "กำลังสร้าง..." : "สร้างผู้ใช้"}
                   </button>
                 </form>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Delete user confirm modal */}
+        <AnimatePresence>
+          {deleteTarget && (
+            <>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setDeleteTarget(null)}
+                className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                transition={{ duration: 0.18 }}
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
+                           w-full max-w-sm bg-[#13151f] border border-white/10 rounded-2xl p-6 shadow-2xl"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Trash2 size={14} className="text-red-400" /> ลบผู้ใช้
+                  </span>
+                  <button onClick={() => setDeleteTarget(null)} className="text-slate-500 hover:text-slate-300"><X size={15} /></button>
+                </div>
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/8 border border-red-500/20 mb-5">
+                  <AlertTriangle size={13} className="text-red-400 flex-shrink-0" />
+                  <p className="text-xs text-red-300/80">
+                    ลบ <span className="font-semibold">{deleteTarget.nickname}</span> ({deleteTarget.email}) ถาวร ไม่สามารถกู้คืนได้
+                  </p>
+                </div>
+                {deleteError && <p className="text-xs text-red-400 mb-3">{deleteError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setDeleteTarget(null)}
+                    className="flex-1 py-2 rounded-lg border border-white/10 text-slate-400 text-sm hover:bg-white/5 transition-colors"
+                  >
+                    ยกเลิก
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                    onClick={handleDelete}
+                    disabled={deleteSaving}
+                    className="flex-1 py-2 rounded-lg bg-red-500/20 border border-red-500/40
+                               text-red-300 text-sm font-semibold hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                  >
+                    {deleteSaving ? "กำลังลบ..." : "ยืนยันลบ"}
+                  </motion.button>
+                </div>
               </motion.div>
             </>
           )}

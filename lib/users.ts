@@ -58,3 +58,8 @@ export async function updateUserPassword(id: string, passwordHash: string): Prom
   const c = await col();
   await c.updateOne({ id }, { $set: { passwordHash } });
 }
+
+export async function deleteUser(id: string): Promise<void> {
+  const c = await col();
+  await c.deleteOne({ id });
+}

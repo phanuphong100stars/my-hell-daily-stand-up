@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { verifySession, SESSION_COOKIE } from "@/lib/auth";
-import { listUsers, createUser, findUserByEmail, findUserById, updateUserPassword } from "@/lib/users";
+import { listUsers, createUser, findUserByEmail, findUserById, updateUserPassword, deleteUser } from "@/lib/users";
 
 async function requireAdmin(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
@@ -57,5 +57,21 @@ export async function PATCH(req: NextRequest) {
 
   const hash = await bcrypt.hash(newPassword.trim(), 12);
   await updateUserPassword(id, hash);
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await requireAdmin(req);
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { id } = await req.json();
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  const target = await findUserById(id);
+  if (!target) return NextResponse.json({ error: "ไม่พบผู้ใช้" }, { status: 404 });
+  if (target.role === "admin") return NextResponse.json({ error: "ไม่สามารถลบ admin ได้" }, { status: 403 });
+  if (target.id === session.sub) return NextResponse.json({ error: "ไม่สามารถลบตัวเองได้" }, { status: 403 });
+
+  await deleteUser(id);
   return NextResponse.json({ ok: true });
 }
