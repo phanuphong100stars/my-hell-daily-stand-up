@@ -64,7 +64,7 @@ export default function TaskRow({ task, jiraPrefixes, onChange, onRemove, onAddP
     >
       {/* JIRA field */}
       <div className="flex items-center shrink-0 rounded-lg bg-white/5 border border-white/10
-                      focus-within:border-violet-500/60 transition-colors overflow-hidden">
+                      focus-within:border-violet-500/60 transition-colors">
 
         {/* Custom prefix dropdown */}
         <div ref={dropRef} className="relative">
