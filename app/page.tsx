@@ -100,6 +100,20 @@ export default function Home() {
     setTimeout(() => setToast(null), 2500);
   };
 
+  const handleAddPrefix = (p: string) => {
+    setSettings((s) => {
+      if (s.jiraPrefixes.includes(p)) return s;
+      const next = { ...s, jiraPrefixes: [...s.jiraPrefixes, p], jiraPrefix: s.jiraPrefix || p };
+      saveSettings(next);
+      fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: profile?.name ?? "", nickname: profile?.nickname ?? "", jiraPrefix: next.jiraPrefix }),
+      }).catch(() => {});
+      return next;
+    });
+  };
+
   const handleNew = () => {
     const dj = settings.jiraPrefixes[0] ? `${settings.jiraPrefixes[0]}-` : "";
     const blank = { jira: dj, desc: "" };
@@ -417,9 +431,9 @@ export default function Home() {
 
                 <div className="border-t border-white/8" />
 
-                <TaskSection label="✅ เมื่อวาน" tasks={entry.yesterday} jiraPrefixes={settings.jiraPrefixes} onChange={(v) => set("yesterday", v)} mentionUsers={mentionUsers} />
+                <TaskSection label="✅ เมื่อวาน" tasks={entry.yesterday} jiraPrefixes={settings.jiraPrefixes} onChange={(v) => set("yesterday", v)} onAddPrefix={handleAddPrefix} mentionUsers={mentionUsers} />
                 <div className="border-t border-white/8" />
-                <TaskSection label="🎯 วันนี้" tasks={entry.today} jiraPrefixes={settings.jiraPrefixes} onChange={(v) => set("today", v)} mentionUsers={mentionUsers} />
+                <TaskSection label="🎯 วันนี้" tasks={entry.today} jiraPrefixes={settings.jiraPrefixes} onChange={(v) => set("today", v)} onAddPrefix={handleAddPrefix} mentionUsers={mentionUsers} />
                 <div className="border-t border-white/8" />
 
                 <div className="space-y-3">

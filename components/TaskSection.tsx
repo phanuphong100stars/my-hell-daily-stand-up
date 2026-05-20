@@ -10,10 +10,11 @@ interface Props {
   tasks: TaskItem[];
   jiraPrefixes: string[];
   onChange: (tasks: TaskItem[]) => void;
+  onAddPrefix: (p: string) => void;
   mentionUsers: MentionUser[];
 }
 
-export default function TaskSection({ label, tasks, jiraPrefixes, onChange, mentionUsers }: Props) {
+export default function TaskSection({ label, tasks, jiraPrefixes, onChange, onAddPrefix, mentionUsers }: Props) {
   const defaultJira = jiraPrefixes[0] ? `${jiraPrefixes[0]}-` : "";
   const add = () => onChange([...tasks, { jira: defaultJira, desc: "" }]);
   const update = (i: number, t: TaskItem) => {
@@ -38,6 +39,7 @@ export default function TaskSection({ label, tasks, jiraPrefixes, onChange, ment
               jiraPrefixes={jiraPrefixes}
               onChange={(nt) => update(i, nt)}
               onRemove={() => remove(i)}
+              onAddPrefix={onAddPrefix}
               mentionUsers={mentionUsers}
             />
           ))}
